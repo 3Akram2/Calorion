@@ -1,22 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
-      providers: [AppService],
-    }).compile();
-
-    appController = app.get<AppController>(AppController);
+  beforeEach(() => {
+    appController = new AppController();
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('health', () => {
+    it('should return service health payload', () => {
+      const payload = appController.health();
+
+      expect(payload.status).toBe('ok');
+      expect(payload.service).toBe('calorion-backend');
+      expect(typeof payload.timestamp).toBe('string');
+      expect(new Date(payload.timestamp).toString()).not.toBe('Invalid Date');
     });
   });
 });
