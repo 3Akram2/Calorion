@@ -1,29 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RemindersService } from './reminders.service';
 
 @Controller('reminders')
 export class RemindersController {
-  constructor(
-    private readonly remindersService: RemindersService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly remindersService: RemindersService) {}
 
   @Post()
-  async create(@Body() body: any) {
-    const user = await this.usersService.getByEmail(body.email);
+  async create(@CurrentUser() user: any, @Body() body: any) {
     return this.remindersService.create(String(user._id), body);
   }
 
   @Get()
-  async list(@Query('email') email: string) {
-    const user = await this.usersService.getByEmail(email);
+  async list(@CurrentUser() user: any) {
     return this.remindersService.listByUser(String(user._id));
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @Query('email') email: string) {
-    const user = await this.usersService.getByEmail(email);
+  async remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.remindersService.remove(String(user._id), id);
   }
 }

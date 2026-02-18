@@ -44,12 +44,18 @@ export class UsersService {
     name: string;
     phoneNumber?: string;
   }) {
+    const adminEmails = (process.env.ADMIN_EMAILS || '')
+      .split(',')
+      .map((x) => x.trim().toLowerCase())
+      .filter(Boolean);
+    const shouldBeAdmin = adminEmails.includes(payload.email.toLowerCase());
     const existing = await this.userModel.findOne({ email: payload.email.toLowerCase() });
 
     if (existing) {
       existing.firebaseUid = payload.firebaseUid;
       existing.phoneNumber = payload.phoneNumber || existing.phoneNumber || '';
       existing.name = existing.name || payload.name;
+      if (shouldBeAdmin) existing.role = 'admin';
       await existing.save();
       return existing;
     }
@@ -66,6 +72,7 @@ export class UsersService {
       email: payload.email.toLowerCase(),
       firebaseUid: payload.firebaseUid,
       phoneNumber: payload.phoneNumber || '',
+      role: shouldBeAdmin ? 'admin' : 'user',
       goal: 'small-loss',
       activityLevel: 'moderate',
       dailyCaloriesTarget,
@@ -74,6 +81,12 @@ export class UsersService {
 
   async getByEmail(email: string) {
     const user = await this.userModel.findOne({ email: email.toLowerCase() }).lean();
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async getByFirebaseUid(firebaseUid: string) {
+    const user = await this.userModel.findOne({ firebaseUid }).lean();
     if (!user) throw new NotFoundException('User not found');
     return user;
   }

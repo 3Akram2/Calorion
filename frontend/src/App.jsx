@@ -33,6 +33,7 @@ function AuthPage({ t, onAuthenticated }) {
 
   const finish = async (firebaseUser) => {
     const idToken = await firebaseUser.getIdToken()
+    localStorage.setItem('firebase-id-token', idToken)
     const res = await apiPost('/api/auth/firebase-login', { idToken })
     onAuthenticated(res.user)
   }
@@ -121,7 +122,6 @@ function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout }) {
     { to: '/weekly-plan', label: t.weeklyPlan },
     { to: '/daily-log', label: t.dailyLog },
     { to: '/reminders', label: t.reminders },
-    { to: '/admin', label: t.adminDashboard },
   ]
 
   return (
@@ -242,10 +242,10 @@ function DailyLogPage({ t, profile }) {
 function RemindersPage({ t, email }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState({ title: '', time: '08:00', telegramChatId: '', ramadanOnly: false })
-  const load = useCallback(async () => setItems(await apiGet(`/api/reminders?email=${encodeURIComponent(email)}`)), [email])
+  const load = useCallback(async () => setItems(await apiGet('/api/reminders')), [])
   useEffect(() => { load().catch(() => {}) }, [load])
-  const create = async () => { await apiPost('/api/reminders', { ...form, email, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }); setForm({ title: '', time: '08:00', telegramChatId: '', ramadanOnly: false }); load() }
-  const remove = async (id) => { await apiDelete(`/api/reminders/${id}?email=${encodeURIComponent(email)}`); load() }
+  const create = async () => { await apiPost('/api/reminders', { ...form, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }); setForm({ title: '', time: '08:00', telegramChatId: '', ramadanOnly: false }); load() }
+  const remove = async (id) => { await apiDelete(`/api/reminders/${id}`); load() }
 
   return <section className="card"><h2>{t.reminders}</h2><div className="grid two"><label>{t.reminderText}<input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} /></label><label>{t.time}<input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value }))} /></label><label>{t.telegramChatId}<input value={form.telegramChatId} onChange={(e) => setForm((p) => ({ ...p, telegramChatId: e.target.value }))} /></label><label><input type="checkbox" checked={form.ramadanOnly} onChange={(e) => setForm((p) => ({ ...p, ramadanOnly: e.target.checked }))} /> {t.ramadanOnly}</label></div><button onClick={create}>{t.addReminder}</button><ul className="list">{items.map((r) => <li key={r._id}><span>{r.time} — {r.title}</span><button onClick={() => remove(r._id)}>{t.deleteLabel}</button></li>)}</ul></section>
 }
@@ -260,7 +260,7 @@ function HelpAiWidget({ t, email }) {
     if (!text.trim() || sending) return
     setSending(true)
     try {
-      const chat = await apiPost('/api/chats/message', { email, content: text })
+      const chat = await apiPost('/api/chats/message', { content: text })
       setMessages(chat.messages || [])
       setText('')
     } finally {
@@ -303,10 +303,12 @@ function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
+        localStorage.removeItem('firebase-id-token')
         setAppUser('')
         return
       }
       const idToken = await firebaseUser.getIdToken()
+      localStorage.setItem('firebase-id-token', idToken)
       const res = await apiPost('/api/auth/firebase-login', { idToken })
       setAppUser(JSON.stringify(res.user))
     })
@@ -316,7 +318,7 @@ function App() {
   const loadProfile = useCallback(async () => {
     if (!email) return
     try {
-      const p = await apiGet(`/api/users/profile?email=${encodeURIComponent(email)}`)
+      const p = await apiGet('/api/users/profile')
       setProfile(p)
       if (p.ramadanMode && p.ramadanCity && p.ramadanCountry) {
         const times = await apiGet(`/api/users/ramadan/timings?city=${encodeURIComponent(p.ramadanCity)}&country=${encodeURIComponent(p.ramadanCountry)}`)
@@ -331,7 +333,7 @@ function App() {
   useEffect(() => { if (appUser && onboardingDone !== 'true') navigate('/onboarding') }, [onboardingDone, navigate, appUser])
 
   const finishOnboarding = async () => { setOnboardingDone('true'); await loadProfile(); navigate('/') }
-  const logout = async () => { await signOut(auth); setAppUser(''); setOnboardingDone('false'); navigate('/auth') }
+  const logout = async () => { await signOut(auth); localStorage.removeItem('firebase-id-token'); setAppUser(''); setOnboardingDone('false'); navigate('/auth') }
 
   if (!appUser) {
     return <AuthPage t={t} onAuthenticated={(user) => setAppUser(JSON.stringify(user))} />
@@ -349,7 +351,6 @@ function App() {
           <Route path="/weekly-plan" element={<WeeklyPlanPage t={t} profile={profile} />} />
           <Route path="/daily-log" element={<DailyLogPage t={t} profile={profile} />} />
           <Route path="/reminders" element={<RemindersPage t={t} email={email} />} />
-          <Route path="/admin" element={<AdminDashboardPage t={t} />} />
           <Route path="/auth" element={<Navigate to="/" />} />
         </Routes>
       </section>

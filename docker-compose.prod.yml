@@ -19,6 +19,7 @@ services:
       - GROQ_MODEL=${GROQ_MODEL:-openai/gpt-oss-120b}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - FIREBASE_SERVICE_ACCOUNT_B64=${FIREBASE_SERVICE_ACCOUNT_B64:-}
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-}
     depends_on:
       - mongo
     expose:
@@ -33,6 +34,18 @@ services:
       - backend
     ports:
       - "8088:80"
+    expose:
+      - "80"
+
+  admin_frontend:
+    container_name: calorion_admin_frontend
+    build:
+      context: ./admin-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8090:80"
     expose:
       - "80"
 

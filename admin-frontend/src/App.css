@@ -1,0 +1,15 @@
+body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #f4f6fb; color: #0f172a; }
+.auth-wrap { min-height: 100dvh; display: grid; place-items: center; padding: 16px; }
+.auth-card { background: white; border-radius: 12px; padding: 20px; max-width: 420px; width: 100%; box-shadow: 0 8px 20px rgba(0,0,0,.08); }
+button { border: 0; border-radius: 10px; padding: 10px 12px; font-weight: 600; cursor: pointer; background: #4f64ff; color: white; }
+.app { padding: 20px; max-width: 1200px; margin: 0 auto; }
+header { display: flex; justify-content: space-between; align-items: center; }
+.metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 16px 0; }
+.metrics > div { background: white; border-radius: 12px; padding: 12px; }
+.metrics span { font-size: 12px; color: #64748b; display:block; }
+.metrics strong { font-size: 26px; }
+section { background: white; border-radius: 12px; padding: 12px; margin-bottom: 12px; overflow: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; border-bottom: 1px solid #e2e8f0; padding: 8px; font-size: 14px; }
+.error { color: #dc2626; }
+@media (max-width: 900px){ .metrics { grid-template-columns: 1fr 1fr; } }
