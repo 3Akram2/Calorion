@@ -34,6 +34,15 @@ export class User {
 
   @Prop({ default: 0 })
   dailyCaloriesTarget: number;
+
+  @Prop({ default: false })
+  ramadanMode: boolean;
+
+  @Prop({ default: '' })
+  ramadanCity: string;
+
+  @Prop({ default: '' })
+  ramadanCountry: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
