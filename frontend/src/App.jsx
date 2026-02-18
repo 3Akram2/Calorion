@@ -303,14 +303,6 @@ function HelpAiWidget({ t, email }) {
   )
 }
 
-function AdminDashboardPage({ t }) {
-  const [metrics, setMetrics] = useState(null)
-  const [users, setUsers] = useState([])
-  const [chats, setChats] = useState([])
-  useEffect(() => { Promise.all([apiGet('/api/admin/metrics'), apiGet('/api/admin/users'), apiGet('/api/admin/chats')]).then(([m, u, c]) => { setMetrics(m); setUsers(u); setChats(c) }).catch(() => setMetrics({ totalUsers: 0, totalChats: 0, totalMessages: 0, newUsers7d: 0 })) }, [])
-  return <section className="card"><h2>{t.adminDashboard}</h2><div className="metrics-grid"><div className="metric"><span>{t.totalUsers}</span><strong>{metrics?.totalUsers ?? '-'}</strong></div><div className="metric"><span>{t.totalChats}</span><strong>{metrics?.totalChats ?? '-'}</strong></div><div className="metric"><span>{t.totalMessages}</span><strong>{metrics?.totalMessages ?? '-'}</strong></div><div className="metric"><span>{t.newUsers7d}</span><strong>{metrics?.newUsers7d ?? '-'}</strong></div></div><h3>{t.usersList}</h3><div className="table-wrap"><table><thead><tr><th>{t.name}</th><th>{t.email}</th><th>{t.goal}</th><th>{t.country}</th></tr></thead><tbody>{users.map((u) => <tr key={u._id}><td>{u.name}</td><td>{u.email}</td><td>{u.goal}</td><td>{u.country}</td></tr>)}</tbody></table></div><h3>{t.chatsList}</h3><div className="table-wrap"><table><thead><tr><th>{t.chatTitle}</th><th>{t.messagesCount}</th><th>{t.lastUpdate}</th></tr></thead><tbody>{chats.map((c) => <tr key={c._id}><td>{c.title}</td><td>{c.messages?.length || 0}</td><td>{new Date(c.updatedAt).toLocaleString()}</td></tr>)}</tbody></table></div></section>
-}
-
 function App() {
   const [theme, setTheme] = usePersistentState('theme', 'light')
   const [lang, setLang] = usePersistentState('lang', 'en')

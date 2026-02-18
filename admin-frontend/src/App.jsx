@@ -1,26 +1,9 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { apiGet, appLoginWithToken } from './api'
+import { TEXT } from './constants'
 import { auth, loginWithGoogle } from './firebase'
 import './App.css'
-
-async function apiGet(path) {
-  const token = localStorage.getItem('firebase-id-token') || ''
-  const res = await fetch(path, { headers: { Authorization: `Bearer ${token}` } })
-  if (!res.ok) throw new Error('Request failed')
-  return res.json()
-}
-
-async function appLoginWithToken(user) {
-  const idToken = await user.getIdToken()
-  localStorage.setItem('firebase-id-token', idToken)
-  const res = await fetch('/api/auth/firebase-login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-    body: JSON.stringify({ idToken }),
-  })
-  if (!res.ok) throw new Error('Login failed')
-  return res.json()
-}
 
 function App() {
   const [appUser, setAppUser] = useState(null)
@@ -38,7 +21,7 @@ function App() {
       try {
         const login = await appLoginWithToken(u)
         if (login?.user?.role !== 'admin') {
-          setError('This account is not admin.')
+          setError(TEXT.NOT_ADMIN)
           await signOut(auth)
           localStorage.removeItem('firebase-id-token')
           return
@@ -81,8 +64,8 @@ function App() {
     return (
       <main className="auth-wrap">
         <section className="auth-card">
-          <h1>Calorion Admin</h1>
-          <p>Only admin accounts can access this dashboard.</p>
+          <h1>{TEXT.ADMIN_TITLE}</h1>
+          <p>{TEXT.ADMIN_SUBTITLE}</p>
           <button onClick={login}>Login with Google</button>
           {error && <p className="error">{error}</p>}
         </section>
@@ -93,7 +76,7 @@ function App() {
   return (
     <main className="app">
       <header>
-        <h1>Calorion Admin Dashboard</h1>
+        <h1>{TEXT.DASHBOARD_TITLE}</h1>
         <button onClick={logout}>Logout</button>
       </header>
 

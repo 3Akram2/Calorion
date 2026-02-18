@@ -2,12 +2,12 @@ import { initializeApp } from 'firebase/app'
 import { GoogleAuthProvider, getAuth, signInWithPopup } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyATtSzxfL7aK_fm1oqVXID1iqwsE4gI_0s',
-  authDomain: 'calorian-27286.firebaseapp.com',
-  projectId: 'calorian-27286',
-  storageBucket: 'calorian-27286.firebasestorage.app',
-  messagingSenderId: '740545498541',
-  appId: '1:740545498541:web:08e30802d0028a0e6b2524',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
 const app = initializeApp(firebaseConfig)
