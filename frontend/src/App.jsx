@@ -24,11 +24,13 @@ const copy = { en, ar }
 
 function AuthPage({ t, onAuthenticated }) {
   const [mode, setMode] = useState('login')
+  const [method, setMethod] = useState('email')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [confirmationResult, setConfirmationResult] = useState(null)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const finish = async (firebaseUser) => {
@@ -40,6 +42,7 @@ function AuthPage({ t, onAuthenticated }) {
 
   const submitEmail = async () => {
     setError('')
+    setLoading(true)
     try {
       const cred =
         mode === 'register'
@@ -48,67 +51,91 @@ function AuthPage({ t, onAuthenticated }) {
       await finish(cred.user)
     } catch (e) {
       setError(e.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   const submitGoogle = async () => {
     setError('')
+    setLoading(true)
     try {
       const cred = await signInWithPopup(auth, googleProvider)
       await finish(cred.user)
     } catch (e) {
       setError(e.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   const sendOtp = async () => {
     setError('')
+    setLoading(true)
     try {
       const result = await startPhoneSignIn(phone)
       setConfirmationResult(result)
     } catch (e) {
       setError(e.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   const verifyOtp = async () => {
     setError('')
+    setLoading(true)
     try {
       const cred = await confirmationResult.confirm(otp)
       await finish(cred.user)
     } catch (e) {
       setError(e.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <section className="auth-wrap">
-      <div className="auth-card">
-        <h1>Calorion Auth</h1>
-        <div className="auth-tabs">
-          <button onClick={() => setMode('login')} className={mode === 'login' ? 'active' : ''}>{t.loginLabel}</button>
-          <button onClick={() => setMode('register')} className={mode === 'register' ? 'active' : ''}>{t.registerLabel}</button>
+    <section className="auth-wrap auth-dark">
+      <div className="auth-card modern">
+        <div className="auth-head">
+          <h1>{mode === 'register' ? 'Create your account' : 'Welcome back'}</h1>
+          <button className="auth-link" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
+            {mode === 'login' ? t.registerLabel : t.loginLabel}
+          </button>
         </div>
 
-        <label>{t.email}<input value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-        <label>{t.password}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
-        <button onClick={submitEmail}>{mode === 'register' ? t.registerLabel : t.loginLabel}</button>
-
-        <div className="divider">or</div>
-        <button onClick={submitGoogle}>{t.continueGoogle}</button>
-
-        <div className="divider">or</div>
-        <label>{t.phone}<input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+2010..." /></label>
-        {!confirmationResult ? (
-          <button onClick={sendOtp}>{t.sendOtp}</button>
-        ) : (
+        {method === 'email' && (
           <>
-            <label>{t.otp}<input value={otp} onChange={(e) => setOtp(e.target.value)} /></label>
-            <button onClick={verifyOtp}>{t.verifyOtp}</button>
+            <label>{t.email}<input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label>
+            <label>{t.password}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
+            <button className="primary-btn" onClick={submitEmail} disabled={loading || !email || !password}>
+              {loading ? '...' : mode === 'register' ? t.registerLabel : t.loginLabel}
+            </button>
           </>
         )}
 
-        <div id="recaptcha-container" style={{ marginTop: 12 }} />
+        {method === 'phone' && (
+          <>
+            <label>{t.phone}<input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+2010..." /></label>
+            {!confirmationResult ? (
+              <button className="primary-btn" onClick={sendOtp} disabled={loading || !phone}>{loading ? '...' : t.sendOtp}</button>
+            ) : (
+              <>
+                <label>{t.otp}<input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="123456" /></label>
+                <button className="primary-btn" onClick={verifyOtp} disabled={loading || !otp}>{loading ? '...' : t.verifyOtp}</button>
+              </>
+            )}
+          </>
+        )}
+
+        <div className="divider"><span>OR</span></div>
+
+        <button className="ghost-btn" onClick={submitGoogle} disabled={loading}>{t.continueGoogle}</button>
+        <button className="ghost-btn" onClick={() => { setMethod('phone'); setError('') }}>{t.phone}</button>
+        <button className="auth-link" onClick={() => { setMethod('email'); setError('') }}>{t.email} + {t.password}</button>
+
+        <div id="recaptcha-container" style={{ marginTop: 10 }} />
         {error && <p className="error-text">{error}</p>}
       </div>
     </section>
