@@ -12,7 +12,18 @@ export class ChatsController {
   @Post('message')
   async sendMessage(@Body() body: { email: string; content: string }) {
     const user = await this.usersService.getByEmail(body.email);
-    return this.chatsService.createOrAppendMessage({ userId: String(user._id), content: body.content });
+    return this.chatsService.createOrAppendMessage({
+      userId: String(user._id),
+      content: body.content,
+      profile: {
+        goal: user.goal,
+        currentWeightKg: user.currentWeightKg,
+        targetWeightKg: user.targetWeightKg,
+        dailyCaloriesTarget: user.dailyCaloriesTarget,
+        cuisines: user.cuisines,
+        country: user.country,
+      },
+    });
   }
 
   @Get()
