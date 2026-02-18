@@ -1,7 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { ChatsService } from '../chats/chats.service';
 import { UsersService } from '../users/users.service';
 
+@Roles('admin')
 @Controller('admin')
 export class AdminController {
   constructor(

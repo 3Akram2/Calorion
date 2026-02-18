@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RamadanService } from './ramadan.service';
 import { UsersService } from './users.service';
 
@@ -10,13 +11,13 @@ export class UsersController {
   ) {}
 
   @Post('profile')
-  upsertProfile(@Body() body: any) {
-    return this.usersService.upsertProfile(body);
+  upsertProfile(@CurrentUser() user: any, @Body() body: any) {
+    return this.usersService.upsertProfile({ ...body, email: user.email, name: body.name || user.name || 'Calorion User' });
   }
 
   @Get('profile')
-  getProfile(@Query('email') email: string) {
-    return this.usersService.getByEmail(email);
+  getProfile(@CurrentUser() user: any) {
+    return this.usersService.getByEmail(user.email);
   }
 
   @Get('ramadan/timings')
