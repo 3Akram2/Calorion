@@ -165,6 +165,23 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
   color: #fff;
   background: conic-gradient(from 10deg, #4285f4 0 25%, #34a853 25% 50%, #fbbc05 50% 75%, #ea4335 75% 100%);
 }
+.input-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.input-with-icon input {
+  flex: 1;
+}
+.phone-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #141b2b;
+  border: 1px solid rgba(148,163,184,.35);
+}
 .auth-link {
   background: transparent;
   color: #79a9ff;
