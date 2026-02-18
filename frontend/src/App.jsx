@@ -1,3 +1,4 @@
+import { useCallback, useMemo, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { usePersistentState } from './hooks/usePersistentState'
@@ -17,31 +18,64 @@ function DashboardPage({ t }) {
 }
 
 function OnboardingPage({ t }) {
-  const [profile, setProfile] = usePersistentState('profile', JSON.stringify({
-    country: '',
-    cuisines: '',
-    heightCm: '',
-    currentWeightKg: '',
-    targetWeightKg: '',
-    goal: 'small-loss',
-  }))
+  // keep sensitive profile data in session (not localStorage)
+  const [profile, setProfile] = useState(() =>
+    sessionStorage.getItem('profile') ||
+    JSON.stringify({
+      country: '',
+      cuisines: '',
+      heightCm: '',
+      currentWeightKg: '',
+      targetWeightKg: '',
+      goal: 'small-loss',
+    }),
+  )
 
-  const data = JSON.parse(profile)
+  const data = useMemo(() => JSON.parse(profile), [profile])
 
-  const setField = (key, value) => {
-    setProfile(JSON.stringify({ ...data, [key]: value }))
-  }
+  const setField = useCallback(
+    (key, value) => {
+      const next = JSON.stringify({ ...data, [key]: value })
+      setProfile(next)
+      sessionStorage.setItem('profile', next)
+    },
+    [data],
+  )
 
   return (
     <section className="card">
       <h2>{t.onboarding}</h2>
       <div className="grid">
-        <label>{t.country}<input value={data.country} onChange={(e) => setField('country', e.target.value)} /></label>
-        <label>{t.cuisines}<input value={data.cuisines} onChange={(e) => setField('cuisines', e.target.value)} /></label>
-        <label>{t.height}<input type="number" value={data.heightCm} onChange={(e) => setField('heightCm', e.target.value)} /></label>
-        <label>{t.currentWeight}<input type="number" value={data.currentWeightKg} onChange={(e) => setField('currentWeightKg', e.target.value)} /></label>
-        <label>{t.targetWeight}<input type="number" value={data.targetWeightKg} onChange={(e) => setField('targetWeightKg', e.target.value)} /></label>
-        <label>{t.goal}
+        <label>
+          {t.country}
+          <input value={data.country} onChange={(e) => setField('country', e.target.value)} />
+        </label>
+        <label>
+          {t.cuisines}
+          <input value={data.cuisines} onChange={(e) => setField('cuisines', e.target.value)} />
+        </label>
+        <label>
+          {t.height}
+          <input type="number" value={data.heightCm} onChange={(e) => setField('heightCm', e.target.value)} />
+        </label>
+        <label>
+          {t.currentWeight}
+          <input
+            type="number"
+            value={data.currentWeightKg}
+            onChange={(e) => setField('currentWeightKg', e.target.value)}
+          />
+        </label>
+        <label>
+          {t.targetWeight}
+          <input
+            type="number"
+            value={data.targetWeightKg}
+            onChange={(e) => setField('targetWeightKg', e.target.value)}
+          />
+        </label>
+        <label>
+          {t.goal}
           <select value={data.goal} onChange={(e) => setField('goal', e.target.value)}>
             <option value="big-loss">{t.bigLoss}</option>
             <option value="small-loss">{t.smallLoss}</option>
@@ -54,12 +88,15 @@ function OnboardingPage({ t }) {
 }
 
 function WeeklyPlanPage({ t }) {
-  const meals = [
-    { name: t.breakfast, calories: 450 },
-    { name: t.lunch, calories: 700 },
-    { name: t.dinner, calories: 600 },
-    { name: t.snack, calories: 250 },
-  ]
+  const meals = useMemo(
+    () => [
+      { name: t.breakfast, calories: 450 },
+      { name: t.lunch, calories: 700 },
+      { name: t.dinner, calories: 600 },
+      { name: t.snack, calories: 250 },
+    ],
+    [t],
+  )
   const total = meals.reduce((sum, m) => sum + m.calories, 0)
 
   return (
@@ -67,18 +104,42 @@ function WeeklyPlanPage({ t }) {
       <h2>{t.weeklyPlan}</h2>
       <ul className="list">
         {meals.map((m) => (
-          <li key={m.name}><span>{m.name}</span><strong>{m.calories} kcal</strong></li>
+          <li key={m.name}>
+            <span>{m.name}</span>
+            <strong>{m.calories} kcal</strong>
+          </li>
         ))}
       </ul>
-      <p><strong>{t.totalCalories}:</strong> {total} kcal</p>
+      <p>
+        <strong>{t.totalCalories}:</strong> {total} kcal
+      </p>
     </section>
   )
 }
 
 function DailyLogPage({ t }) {
-  const [consumed, setConsumed] = usePersistentState('daily-consumed', '0')
-  const [burned, setBurned] = usePersistentState('daily-burned', '0')
-  const [limit, setLimit] = usePersistentState('daily-limit', '2000')
+  // keep sensitive daily logs in session (not localStorage)
+  const [consumed, setConsumed] = useState(() => sessionStorage.getItem('daily-consumed') || '0')
+  const [burned, setBurned] = useState(() => sessionStorage.getItem('daily-burned') || '0')
+  const [limit, setLimit] = useState(() => sessionStorage.getItem('daily-limit') || '2000')
+
+  const onConsumedChange = useCallback((e) => {
+    const v = e.target.value
+    setConsumed(v)
+    sessionStorage.setItem('daily-consumed', v)
+  }, [])
+
+  const onBurnedChange = useCallback((e) => {
+    const v = e.target.value
+    setBurned(v)
+    sessionStorage.setItem('daily-burned', v)
+  }, [])
+
+  const onLimitChange = useCallback((e) => {
+    const v = e.target.value
+    setLimit(v)
+    sessionStorage.setItem('daily-limit', v)
+  }, [])
 
   const consumedN = Number(consumed || 0)
   const burnedN = Number(burned || 0)
@@ -90,12 +151,25 @@ function DailyLogPage({ t }) {
     <section className="card">
       <h2>{t.dailyLog}</h2>
       <div className="grid">
-        <label>{t.caloriesConsumed}<input type="number" value={consumed} onChange={(e) => setConsumed(e.target.value)} /></label>
-        <label>{t.caloriesBurned}<input type="number" value={burned} onChange={(e) => setBurned(e.target.value)} /></label>
-        <label>{t.dailyLimit}<input type="number" value={limit} onChange={(e) => setLimit(e.target.value)} /></label>
+        <label>
+          {t.caloriesConsumed}
+          <input type="number" value={consumed} onChange={onConsumedChange} />
+        </label>
+        <label>
+          {t.caloriesBurned}
+          <input type="number" value={burned} onChange={onBurnedChange} />
+        </label>
+        <label>
+          {t.dailyLimit}
+          <input type="number" value={limit} onChange={onLimitChange} />
+        </label>
       </div>
-      <p><strong>{t.netCalories}:</strong> {net} kcal</p>
-      <p><strong>{t.overUnder}:</strong> {overUnder > 0 ? `+${overUnder}` : overUnder} kcal</p>
+      <p>
+        <strong>{t.netCalories}:</strong> {net} kcal
+      </p>
+      <p>
+        <strong>{t.overUnder}:</strong> {overUnder > 0 ? `+${overUnder}` : overUnder} kcal
+      </p>
     </section>
   )
 }
@@ -110,16 +184,24 @@ function AiChatPage({ t }) {
 }
 
 function SettingsPage({ t, theme, setTheme, lang, setLang }) {
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === 'light' ? 'dark' : 'light')
+  }, [theme, setTheme])
+
+  const toggleLang = useCallback(() => {
+    setLang(lang === 'en' ? 'ar' : 'en')
+  }, [lang, setLang])
+
   return (
     <section className="card">
       <h2>{t.settings}</h2>
       <div className="row">
         <span>{t.mode}</span>
-        <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{theme === 'light' ? t.dark : t.light}</button>
+        <button onClick={toggleTheme}>{theme === 'light' ? t.dark : t.light}</button>
       </div>
       <div className="row">
         <span>{t.language}</span>
-        <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>{lang === 'en' ? t.arabic : t.english}</button>
+        <button onClick={toggleLang}>{lang === 'en' ? t.arabic : t.english}</button>
       </div>
     </section>
   )
@@ -128,16 +210,19 @@ function SettingsPage({ t, theme, setTheme, lang, setLang }) {
 function App() {
   const [theme, setTheme] = usePersistentState('theme', 'light')
   const [lang, setLang] = usePersistentState('lang', 'en')
-  const t = copy[lang] || copy.en
+  const t = useMemo(() => copy[lang] || copy.en, [lang])
 
-  const navItems = [
-    { to: '/', label: t.dashboard, end: true },
-    { to: '/onboarding', label: t.onboarding },
-    { to: '/weekly-plan', label: t.weeklyPlan },
-    { to: '/daily-log', label: t.dailyLog },
-    { to: '/ai-chat', label: t.aiChat },
-    { to: '/settings', label: t.settings },
-  ]
+  const navItems = useMemo(
+    () => [
+      { to: '/', label: t.dashboard, end: true },
+      { to: '/onboarding', label: t.onboarding },
+      { to: '/weekly-plan', label: t.weeklyPlan },
+      { to: '/daily-log', label: t.dailyLog },
+      { to: '/ai-chat', label: t.aiChat },
+      { to: '/settings', label: t.settings },
+    ],
+    [t],
+  )
 
   return (
     <main className={`app ${theme}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -151,8 +236,12 @@ function App() {
           ))}
         </nav>
         <div className="menu-controls">
-          <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{t.mode}: {theme === 'light' ? t.light : t.dark}</button>
-          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>{t.language}: {lang === 'en' ? t.english : t.arabic}</button>
+          <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+            {t.mode}: {theme === 'light' ? t.light : t.dark}
+          </button>
+          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>
+            {t.language}: {lang === 'en' ? t.english : t.arabic}
+          </button>
         </div>
       </aside>
 
