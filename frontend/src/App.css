@@ -113,6 +113,14 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
 .chat-input { display: flex; gap: 8px; margin-top: 10px; }
 .chat-input input { flex: 1; }
 
+.auth-wrap { min-height: 100dvh; display: grid; place-items: center; padding: 16px; }
+.auth-card { width: 100%; max-width: 460px; background: rgba(127,127,127,.12); border-radius: 16px; padding: 16px; }
+.auth-card h1 { margin-top: 0; }
+.auth-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+.auth-tabs button.active { background: #4f64ff; color: white; }
+.divider { text-align: center; opacity: .7; margin: 10px 0; }
+.error-text { color: #d62d20; font-size: 13px; }
+
 @media (min-width: 960px) {
   .topbar { display: none; }
   .sidebar {

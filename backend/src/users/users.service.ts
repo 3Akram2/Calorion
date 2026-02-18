@@ -38,6 +38,40 @@ export class UsersService {
     );
   }
 
+  async upsertFromFirebase(payload: {
+    firebaseUid: string;
+    email: string;
+    name: string;
+    phoneNumber?: string;
+  }) {
+    const existing = await this.userModel.findOne({ email: payload.email.toLowerCase() });
+
+    if (existing) {
+      existing.firebaseUid = payload.firebaseUid;
+      existing.phoneNumber = payload.phoneNumber || existing.phoneNumber || '';
+      existing.name = existing.name || payload.name;
+      await existing.save();
+      return existing;
+    }
+
+    const dailyCaloriesTarget = this.calorieService.calculateDailyTarget({
+      currentWeightKg: 70,
+      heightCm: 170,
+      goal: 'small-loss',
+      activityLevel: 'moderate',
+    });
+
+    return this.userModel.create({
+      name: payload.name,
+      email: payload.email.toLowerCase(),
+      firebaseUid: payload.firebaseUid,
+      phoneNumber: payload.phoneNumber || '',
+      goal: 'small-loss',
+      activityLevel: 'moderate',
+      dailyCaloriesTarget,
+    });
+  }
+
   async getByEmail(email: string) {
     const user = await this.userModel.findOne({ email: email.toLowerCase() }).lean();
     if (!user) throw new NotFoundException('User not found');

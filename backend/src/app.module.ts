@@ -6,6 +6,7 @@ import { AdminModule } from './admin/admin.module';
 import { ChatsModule } from './chats/chats.module';
 import { UsersModule } from './users/users.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { RemindersModule } from './reminders/reminders.module';
     ChatsModule,
     AdminModule,
     RemindersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -77,5 +77,14 @@
   "telegramChatId": "Telegram chat ID",
   "ramadanOnly": "Ramadan only",
   "addReminder": "Add reminder",
-  "deleteLabel": "Delete"
+  "deleteLabel": "Delete",
+  "loginLabel": "Login",
+  "registerLabel": "Register",
+  "password": "Password",
+  "phone": "Phone number",
+  "otp": "OTP code",
+  "sendOtp": "Send OTP",
+  "verifyOtp": "Verify OTP",
+  "continueGoogle": "Continue with Google",
+  "logoutLabel": "Logout"
 }
