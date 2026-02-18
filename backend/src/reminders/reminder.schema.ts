@@ -26,7 +26,7 @@ export class Reminder {
   @Prop({ default: '' })
   telegramChatId: string;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   lastTriggeredAt: Date | null;
 }
 
