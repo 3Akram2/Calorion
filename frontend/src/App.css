@@ -158,12 +158,13 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
 .google-mark {
   display: inline-grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
-  font-weight: 800;
-  color: #fff;
-  background: conic-gradient(from 10deg, #4285f4 0 25%, #34a853 25% 50%, #fbbc05 50% 75%, #ea4335 75% 100%);
+  background: #fff;
+}
+.google-mark svg {
+  display: block;
 }
 .input-with-icon {
   display: flex;
