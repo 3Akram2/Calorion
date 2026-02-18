@@ -77,5 +77,14 @@
   "telegramChatId": "معرّف تيليجرام",
   "ramadanOnly": "رمضان فقط",
   "addReminder": "إضافة تذكير",
-  "deleteLabel": "حذف"
+  "deleteLabel": "حذف",
+  "loginLabel": "تسجيل الدخول",
+  "registerLabel": "إنشاء حساب",
+  "password": "كلمة المرور",
+  "phone": "رقم الهاتف",
+  "otp": "رمز التحقق",
+  "sendOtp": "إرسال الرمز",
+  "verifyOtp": "تأكيد الرمز",
+  "continueGoogle": "المتابعة بحساب Google",
+  "logoutLabel": "تسجيل الخروج"
 }

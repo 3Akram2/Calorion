@@ -11,6 +11,12 @@ export class User {
   @Prop({ required: true, unique: true, index: true })
   email: string;
 
+  @Prop({ default: '', index: true })
+  firebaseUid: string;
+
+  @Prop({ default: '' })
+  phoneNumber: string;
+
   @Prop({ default: '' })
   country: string;
 
