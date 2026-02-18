@@ -103,11 +103,16 @@ function AuthPage({ t, onAuthenticated }) {
         <div className="divider"><span>OR</span></div>
 
         <button className="ghost-btn google-btn" onClick={submitGoogle} disabled={loading}>
-          <span className="google-mark" aria-hidden="true">G</span>
+          <span className="google-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-label="Google">
+              <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-1.4 3.6-5.5 3.6-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.2 14.6 2.3 12 2.3 6.9 2.3 2.8 6.4 2.8 11.5S6.9 20.7 12 20.7c6.9 0 9.1-4.8 9.1-7.3 0-.5 0-.9-.1-1.2H12z"/>
+              <path fill="#34A853" d="M3.8 7.3l3.2 2.3c.9-2 2.8-3.4 5-3.4 1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.2 14.6 2.3 12 2.3c-3.6 0-6.7 2-8.2 5z"/>
+              <path fill="#FBBC05" d="M12 20.7c2.5 0 4.6-.8 6.2-2.3l-3-2.4c-.8.6-1.9 1.1-3.2 1.1-2.8 0-5.1-1.9-5.9-4.4l-3.3 2.5c1.5 3.2 4.7 5.5 9.2 5.5z"/>
+              <path fill="#4285F4" d="M21.1 12.2H12v3.9h5.5c-.3 1.3-1.1 2.2-2.3 2.9l3 2.4c1.8-1.7 2.9-4.2 2.9-7.2 0-.5 0-.9-.1-1.2z"/>
+            </svg>
+          </span>
           <span>{t.continueGoogle}</span>
         </button>
-
-        <p className="auth-note">Not a member yet? Sign up for Calorion account.</p>
 
         <div id="recaptcha-container" style={{ marginTop: 10 }} />
         {error && <p className="error-text">{error}</p>}
