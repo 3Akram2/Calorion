@@ -15,24 +15,33 @@ export class UsersService {
     const goal = (payload.goal || 'small-loss') as 'big-loss' | 'small-loss' | 'maintain';
     const activityLevel = (payload.activityLevel || 'moderate') as 'low' | 'moderate' | 'high';
 
-    const dailyCaloriesTarget = this.calorieService.calculateDailyTarget({
-      currentWeightKg: Number(payload.currentWeightKg || 0),
+    const safeUpdate = {
+      name: payload.name,
+      email: payload.email.toLowerCase(),
+      country: payload.country || '',
+      cuisines: Array.isArray(payload.cuisines) ? payload.cuisines : [],
       heightCm: Number(payload.heightCm || 0),
+      currentWeightKg: Number(payload.currentWeightKg || 0),
+      targetWeightKg: Number(payload.targetWeightKg || 0),
+      goal,
+      activityLevel,
+      ramadanMode: !!payload.ramadanMode,
+      ramadanCity: payload.ramadanCity || '',
+      ramadanCountry: payload.ramadanCountry || '',
+    };
+
+    const dailyCaloriesTarget = this.calorieService.calculateDailyTarget({
+      currentWeightKg: safeUpdate.currentWeightKg,
+      heightCm: safeUpdate.heightCm,
       goal,
       activityLevel,
     });
 
     return this.userModel.findOneAndUpdate(
-      { email: payload.email.toLowerCase() },
+      { email: safeUpdate.email },
       {
-        ...payload,
-        email: payload.email.toLowerCase(),
-        goal,
-        activityLevel,
+        ...safeUpdate,
         dailyCaloriesTarget,
-        ramadanMode: !!payload.ramadanMode,
-        ramadanCity: payload.ramadanCity || '',
-        ramadanCountry: payload.ramadanCountry || '',
       },
       { upsert: true, new: true },
     );
