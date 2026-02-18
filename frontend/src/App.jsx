@@ -83,7 +83,12 @@ function AuthPage({ t, onAuthenticated }) {
 
         {method === 'phone' && (
           <>
-            <label>{t.phone}<input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+2010..." /></label>
+            <label>{t.phone}
+              <div className="input-with-icon">
+                <span className="phone-mark" aria-hidden="true">📱</span>
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+2010..." />
+              </div>
+            </label>
             {!confirmationResult ? (
               <button className="primary-btn" onClick={sendOtp} disabled={loading || !phone}>{loading ? '...' : t.sendOtp}</button>
             ) : (
