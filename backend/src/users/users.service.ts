@@ -30,6 +30,9 @@ export class UsersService {
         goal,
         activityLevel,
         dailyCaloriesTarget,
+        ramadanMode: !!payload.ramadanMode,
+        ramadanCity: payload.ramadanCity || '',
+        ramadanCountry: payload.ramadanCountry || '',
       },
       { upsert: true, new: true },
     );
