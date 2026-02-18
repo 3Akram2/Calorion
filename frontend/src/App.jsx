@@ -97,7 +97,10 @@ function AuthPage({ t, onAuthenticated }) {
 
         <div className="divider"><span>OR</span></div>
 
-        <button className="ghost-btn" onClick={submitGoogle} disabled={loading}>{t.continueGoogle}</button>
+        <button className="ghost-btn google-btn" onClick={submitGoogle} disabled={loading}>
+          <span className="google-mark" aria-hidden="true">G</span>
+          <span>{t.continueGoogle}</span>
+        </button>
 
         <p className="auth-note">Not a member yet? Sign up for Calorion account.</p>
 
