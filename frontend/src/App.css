@@ -158,6 +158,7 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
 .divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; color: #8ea2c8; }
 .divider::before, .divider::after { content: ''; height: 1px; flex: 1; background: rgba(148,163,184,.25); }
 .error-text { color: #ff7777; font-size: 13px; margin-top: 8px; }
+.auth-note { color: #8ea2c8; font-size: 13px; text-align: center; margin-top: 10px; }
 
 @media (min-width: 960px) {
   .topbar { display: none; }

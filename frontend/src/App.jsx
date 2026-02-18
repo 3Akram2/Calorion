@@ -7,9 +7,7 @@ import {
   useNavigate,
 } from 'react-router-dom'
 import {
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
 } from 'firebase/auth'
@@ -23,10 +21,7 @@ import ar from './locales/ar.json'
 const copy = { en, ar }
 
 function AuthPage({ t, onAuthenticated }) {
-  const [mode, setMode] = useState('login')
-  const [method, setMethod] = useState('email')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [method, setMethod] = useState('phone')
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [confirmationResult, setConfirmationResult] = useState(null)
@@ -38,22 +33,6 @@ function AuthPage({ t, onAuthenticated }) {
     localStorage.setItem('firebase-id-token', idToken)
     const res = await apiPost('/api/auth/firebase-login', { idToken })
     onAuthenticated(res.user)
-  }
-
-  const submitEmail = async () => {
-    setError('')
-    setLoading(true)
-    try {
-      const cred =
-        mode === 'register'
-          ? await createUserWithEmailAndPassword(auth, email, password)
-          : await signInWithEmailAndPassword(auth, email, password)
-      await finish(cred.user)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
   }
 
   const submitGoogle = async () => {
@@ -99,21 +78,8 @@ function AuthPage({ t, onAuthenticated }) {
     <section className="auth-wrap auth-dark">
       <div className="auth-card modern">
         <div className="auth-head">
-          <h1>{mode === 'register' ? 'Create your account' : 'Welcome back'}</h1>
-          <button className="auth-link" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-            {mode === 'login' ? t.registerLabel : t.loginLabel}
-          </button>
+          <h1>Create your Calorion account</h1>
         </div>
-
-        {method === 'email' && (
-          <>
-            <label>{t.email}<input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></label>
-            <label>{t.password}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
-            <button className="primary-btn" onClick={submitEmail} disabled={loading || !email || !password}>
-              {loading ? '...' : mode === 'register' ? t.registerLabel : t.loginLabel}
-            </button>
-          </>
-        )}
 
         {method === 'phone' && (
           <>
@@ -132,8 +98,8 @@ function AuthPage({ t, onAuthenticated }) {
         <div className="divider"><span>OR</span></div>
 
         <button className="ghost-btn" onClick={submitGoogle} disabled={loading}>{t.continueGoogle}</button>
-        <button className="ghost-btn" onClick={() => { setMethod('phone'); setError('') }}>{t.phone}</button>
-        <button className="auth-link" onClick={() => { setMethod('email'); setError('') }}>{t.email} + {t.password}</button>
+
+        <p className="auth-note">Not a member yet? Sign up for Calorion account.</p>
 
         <div id="recaptcha-container" style={{ marginTop: 10 }} />
         {error && <p className="error-text">{error}</p>}
