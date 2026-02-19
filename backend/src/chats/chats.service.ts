@@ -12,6 +12,7 @@ export class ChatsService {
   async createOrAppendMessage(params: {
     userId: string;
     content: string;
+    forceNewChat?: boolean;
     profile?: {
       goal?: string;
       currentWeightKg?: number;
@@ -21,13 +22,15 @@ export class ChatsService {
       country?: string;
     };
   }) {
-    const { userId, content, profile } = params;
-    let chat = await this.chatModel.findOne({ userId: new Types.ObjectId(userId) }).sort({ updatedAt: -1 });
+    const { userId, content, profile, forceNewChat } = params;
+    let chat = forceNewChat
+      ? null
+      : await this.chatModel.findOne({ userId: new Types.ObjectId(userId) }).sort({ updatedAt: -1 });
 
     if (!chat) {
       chat = await this.chatModel.create({
         userId: new Types.ObjectId(userId),
-        title: 'Coaching Chat',
+        title: 'Nutrition Assistant Chat',
         messages: [],
       });
     }
@@ -93,7 +96,7 @@ export class ChatsService {
           {
             role: 'system',
             content:
-              'You are Calorion nutrition coach. Keep answers practical, structured, and concise. Avoid medical diagnosis. Use user profile and recent history. Offer specific meal adjustments and calories impact.',
+              'You are Calorion Nutrition Assistant. Be practical, clear, and supportive for nutrition, calories, meal planning, and healthy weight changes. Avoid medical diagnosis. Use user profile context and provide actionable meal adjustments with calorie impact.'
           },
           {
             role: 'system',

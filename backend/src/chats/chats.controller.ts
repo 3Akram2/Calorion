@@ -17,10 +17,11 @@ export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
   @Post('message')
-  async sendMessage(@CurrentUser() user: AppUser, @Body() body: { content: string }) {
+  async sendMessage(@CurrentUser() user: AppUser, @Body() body: { content: string; newChat?: boolean }) {
     return this.chatsService.createOrAppendMessage({
       userId: String(user._id),
       content: body.content,
+      forceNewChat: !!body.newChat,
       profile: {
         goal: user.goal,
         currentWeightKg: user.currentWeightKg,

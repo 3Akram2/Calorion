@@ -132,7 +132,7 @@ function AuthPage({ t, onAuthenticated }) {
 
 function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout, profile, onOpenProfile }) {
   const items = [
-    { to: '/', label: t.dashboard, end: true, icon: '📊' },
+    { to: '/', label: t.dashboard, end: true, icon: '🏠' },
     { to: '/weekly-plan', label: t.weeklyPlan, icon: '🗓️' },
     { to: '/daily-log', label: t.dailyLog, icon: '📝' },
     { to: '/reminders', label: t.reminders, icon: '⏰' },
@@ -502,22 +502,31 @@ function HelpAiWidget({ t, email }) {
   const [text, setText] = useState('')
   const [messages, setMessages] = useState([])
   const [sending, setSending] = useState(false)
+  const [freshSession, setFreshSession] = useState(true)
 
   const send = async () => {
     if (!text.trim() || sending) return
     setSending(true)
     try {
-      const chat = await apiPost('/api/chats/message', { content: text })
+      const chat = await apiPost('/api/chats/message', { content: text, newChat: freshSession })
       setMessages(chat.messages || [])
+      setFreshSession(false)
       setText('')
     } finally {
       setSending(false)
     }
   }
 
+  const openNewChat = () => {
+    setMessages([])
+    setText('')
+    setFreshSession(true)
+    setOpen(true)
+  }
+
   return (
     <>
-      <button className="help-fab" onClick={() => setOpen(true)} title={t.aiChat}>💬</button>
+      <button className="help-fab" onClick={openNewChat} title={t.aiChat}>💬</button>
       {open && <div className="chat-overlay" onClick={() => setOpen(false)}><div className="chat-panel" onClick={(e) => e.stopPropagation()}><div className="chat-header"><strong>{t.aiChat}</strong><button className="icon-btn" onClick={() => setOpen(false)}>✕</button></div><div className="chat-box">{messages.length === 0 && <p>{t.aiPlaceholder}</p>}{messages.map((m, i) => <div key={i} className={`bubble ${m.role}`}>{m.content}</div>)}</div><div className="chat-input"><input value={text} onChange={(e) => setText(e.target.value)} placeholder={t.chatInputPlaceholder} /><button onClick={send} disabled={sending}>{sending ? '...' : t.send}</button></div></div></div>}
     </>
   )
