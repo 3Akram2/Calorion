@@ -242,6 +242,8 @@ function DashboardPage({ t, profile, ramadanTimings, tips }) {
 function ProfilePage({ t, profile, reloadProfile }) {
   const [timings, setTimings] = useState(null)
   const [form, setForm] = useState(null)
+  const [editing, setEditing] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     if (!profile) return
@@ -252,12 +254,12 @@ function ProfilePage({ t, profile, reloadProfile }) {
   }, [profile])
 
   const fetchTimings = async () => {
-    if (!profile?.ramadanCity || !profile?.ramadanCountry) return
-    const d = await apiGet(`/api/users/ramadan/timings?city=${encodeURIComponent(profile.ramadanCity)}&country=${encodeURIComponent(profile.ramadanCountry)}`)
+    if (!form?.ramadanCity || !form?.ramadanCountry) return
+    const d = await apiGet(`/api/users/ramadan/timings?city=${encodeURIComponent(form.ramadanCity)}&country=${encodeURIComponent(form.ramadanCountry)}`)
     setTimings(d)
   }
 
-  const saveProfile = async () => {
+  const submitSave = async () => {
     if (!form) return
     await apiPost('/api/users/profile', {
       ...form,
@@ -266,13 +268,26 @@ function ProfilePage({ t, profile, reloadProfile }) {
       targetWeightKg: Number(form.targetWeightKg || 0),
       heightCm: Number(form.heightCm || 0),
     })
+    setShowConfirm(false)
+    setEditing(false)
     reloadProfile()
+  }
+
+  const cancelEdit = () => {
+    setEditing(false)
+    setShowConfirm(false)
+    if (!profile) return
+    setForm({ ...profile, cuisinesText: (profile.cuisines || []).join(', ') })
   }
 
   if (!profile || !form) return <section className="card">{t.loading}</section>
   return (
     <section className="card profile-card">
-      <h2>{t.profile}</h2>
+      <div className="profile-title-row">
+        <h2>{t.profile}</h2>
+        {!editing && <button className="icon-pencil" onClick={() => setEditing(true)} title="Edit">✏️</button>}
+      </div>
+
       <div className="profile-hero">
         {form.photoUrl ? <img src={form.photoUrl} alt="profile" className="profile-avatar" /> : <div className="profile-avatar profile-avatar-fallback">{(form.name || 'U').charAt(0).toUpperCase()}</div>}
         <div>
@@ -280,25 +295,59 @@ function ProfilePage({ t, profile, reloadProfile }) {
           <p>{profile.email}</p>
         </div>
       </div>
+
       <div className="grid two">
-        <label>{t.name}<input value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label>
-        <label>{t.country}<input value={form.country || ''} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} /></label>
-        <label>Photo URL<input value={form.photoUrl || ''} onChange={(e) => setForm((p) => ({ ...p, photoUrl: e.target.value }))} /></label>
-        <label>{t.currentWeight}<input type="number" value={form.currentWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, currentWeightKg: e.target.value }))} /></label>
-        <label>{t.targetWeight}<input type="number" value={form.targetWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, targetWeightKg: e.target.value }))} /></label>
-        <label>{t.height}<input type="number" value={form.heightCm || 0} onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))} /></label>
-        <label>{t.goal}<select value={form.goal || 'small-loss'} onChange={(e) => setForm((p) => ({ ...p, goal: e.target.value }))}><option value="big-loss">{t.bigLoss}</option><option value="small-loss">{t.smallLoss}</option><option value="maintain">{t.maintain}</option></select></label>
-        <label>{t.activityLevel}<select value={form.activityLevel || 'moderate'} onChange={(e) => setForm((p) => ({ ...p, activityLevel: e.target.value }))}><option value="low">{t.low}</option><option value="moderate">{t.moderate}</option><option value="high">{t.high}</option></select></label>
-        <label>{t.cuisines}<input value={form.cuisinesText || ''} onChange={(e) => setForm((p) => ({ ...p, cuisinesText: e.target.value }))} /></label>
+        <label>{t.name}<input disabled={!editing} value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label>
+        <label>{t.country}<input disabled={!editing} value={form.country || ''} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} /></label>
+        <label>Photo URL<input disabled={!editing} value={form.photoUrl || ''} onChange={(e) => setForm((p) => ({ ...p, photoUrl: e.target.value }))} /></label>
+        <label>{t.currentWeight}<input disabled={!editing} type="number" value={form.currentWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, currentWeightKg: e.target.value }))} /></label>
+        <label>{t.targetWeight}<input disabled={!editing} type="number" value={form.targetWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, targetWeightKg: e.target.value }))} /></label>
+        <label>{t.height}<input disabled={!editing} type="number" value={form.heightCm || 0} onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))} /></label>
+        <label>{t.goal}<select disabled={!editing} value={form.goal || 'small-loss'} onChange={(e) => setForm((p) => ({ ...p, goal: e.target.value }))}><option value="big-loss">{t.bigLoss}</option><option value="small-loss">{t.smallLoss}</option><option value="maintain">{t.maintain}</option></select></label>
+        <label>{t.activityLevel}<select disabled={!editing} value={form.activityLevel || 'moderate'} onChange={(e) => setForm((p) => ({ ...p, activityLevel: e.target.value }))}><option value="low">{t.low}</option><option value="moderate">{t.moderate}</option><option value="high">{t.high}</option></select></label>
+        <label>{t.cuisines}<input disabled={!editing} value={form.cuisinesText || ''} onChange={(e) => setForm((p) => ({ ...p, cuisinesText: e.target.value }))} /></label>
       </div>
-      <p>{t.maintenanceCalories}: <strong>{profile?.maintenanceCalories || 0}</strong> · {t.calorieCut}: <strong>{profile?.calorieDeficit || 0}</strong> · {t.dailyTarget}: <strong>{profile?.dailyCaloriesTarget || 0}</strong></p>
-      <button onClick={saveProfile}>{t.saveProfile}</button>
+
+      <div className="profile-metrics-stack">
+        <div><span>{t.maintenanceCalories}</span><strong>{profile?.maintenanceCalories || 0}</strong></div>
+        <div><span>{t.calorieCut}</span><strong>{profile?.calorieDeficit || 0}</strong></div>
+        <div><span>{t.dailyTarget}</span><strong>{profile?.dailyCaloriesTarget || 0}</strong></div>
+      </div>
+
+      {editing && (
+        <div className="profile-actions-row">
+          <button className="primary-btn" onClick={() => setShowConfirm(true)}>{t.saveProfile}</button>
+          <button className="ghost-btn" onClick={cancelEdit}>{t.back}</button>
+        </div>
+      )}
+
       <hr />
       <h3>{t.ramadanMode}</h3>
       <p>{t.ramadanDescription}</p>
-      <button onClick={() => setForm((p) => ({ ...p, ramadanMode: !p.ramadanMode }))}>{form.ramadanMode ? t.disable : t.enable}</button>
+      <label className="ramadan-check"><input disabled={!editing} type="checkbox" checked={!!form.ramadanMode} onChange={(e) => setForm((p) => ({ ...p, ramadanMode: e.target.checked }))} /> {form.ramadanMode ? t.enable : t.disable}</label>
+
+      {form.ramadanMode && (
+        <div className="ramadan-tip-box">
+          <p><strong>Ramadan tip:</strong> Break your fast with 1-3 dates + 2 cups of water, pray, then eat your main meal after ~30 minutes to avoid overeating.</p>
+          <p>Meal pattern: Iftar (after Maghrib + 30 min), Suhoor (before Fajr), and one light sweet snack (e.g. 3 pieces qatayef or 1 piece konafa with nuts).</p>
+        </div>
+      )}
+
       <button onClick={fetchTimings}>{t.fetchTodayTimings}</button>
       {timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}
+
+      {showConfirm && (
+        <div className="confirm-overlay" onClick={() => setShowConfirm(false)}>
+          <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
+            <h4>Confirm profile update</h4>
+            <p>Save your new profile values and recalculate calories?</p>
+            <div className="confirm-actions">
+              <button className="primary-btn" onClick={submitSave}>Yes, save</button>
+              <button className="ghost-btn" onClick={() => setShowConfirm(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

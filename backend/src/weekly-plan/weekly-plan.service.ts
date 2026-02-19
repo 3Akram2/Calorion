@@ -66,7 +66,11 @@ export class WeeklyPlanService {
     const fallback = this.fallbackPlan(weekStart, user);
     if (!apiKey) return fallback;
 
-    const prompt = `Generate a 7-day food plan as STRICT JSON with shape {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"breakfast|lunch|dinner|snack","name":"...","cuisine":"...","weightGrams":number,"calories":number}],"totalCalories":number}]}. Target calories/day around ${user.dailyCaloriesTarget || 2000}. User preferred cuisines: ${(user.cuisines || []).join(', ') || 'none'}. User nationality/country: ${user.country || 'unknown'}. Avoid repeating last week meals. Last week plan: ${JSON.stringify(previousPlan?.days || []).slice(0, 2500)} Week starts: ${weekStart}`;
+    const ramadanHint = user.ramadanMode
+      ? 'Ramadan mode ON: include 3 meal windows (iftar after Maghrib + ~30 min, light sweet snack between meals, suhoor before Fajr). Add hydration guidance and keep foods culturally familiar.'
+      : '';
+
+    const prompt = `Generate a 7-day food plan as STRICT JSON with shape {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"breakfast|lunch|dinner|snack","name":"...","cuisine":"...","weightGrams":number,"calories":number}],"totalCalories":number}]}. Target calories/day around ${user.dailyCaloriesTarget || 2000}. User preferred cuisines: ${(user.cuisines || []).join(', ') || 'none'}. User nationality/country: ${user.country || 'unknown'}. ${ramadanHint} Avoid repeating last week meals. Last week plan: ${JSON.stringify(previousPlan?.days || []).slice(0, 2500)} Week starts: ${weekStart}`;
 
     try {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -107,12 +111,19 @@ export class WeeklyPlanService {
     return {
       days: dates.map((date, i) => {
         const cuisine = cuisines[i % cuisines.length];
-        const meals = [
-          { mealType: 'breakfast', name: `${cuisine} breakfast bowl`, cuisine, weightGrams: 320, calories: Math.round(target * 0.28) },
-          { mealType: 'lunch', name: `${cuisine} chicken rice plate`, cuisine, weightGrams: 450, calories: Math.round(target * 0.34) },
-          { mealType: 'dinner', name: `${cuisine} grilled protein salad`, cuisine, weightGrams: 380, calories: Math.round(target * 0.28) },
-          { mealType: 'snack', name: 'Fruit + yogurt', cuisine, weightGrams: 180, calories: Math.round(target * 0.1) },
-        ];
+        const meals = user?.ramadanMode
+          ? [
+              { mealType: 'breakfast', name: `${cuisine} iftar plate (after Maghrib + 30 min)`, cuisine, weightGrams: 430, calories: Math.round(target * 0.4) },
+              { mealType: 'snack', name: 'Sweet snack (3 qatayef or 1 konafa with nuts)', cuisine, weightGrams: 120, calories: Math.round(target * 0.15) },
+              { mealType: 'dinner', name: `${cuisine} suhoor meal (before Fajr)`, cuisine, weightGrams: 360, calories: Math.round(target * 0.35) },
+              { mealType: 'snack', name: '1-3 dates + 2 cups water', cuisine, weightGrams: 140, calories: Math.round(target * 0.1) },
+            ]
+          : [
+              { mealType: 'breakfast', name: `${cuisine} breakfast bowl`, cuisine, weightGrams: 320, calories: Math.round(target * 0.28) },
+              { mealType: 'lunch', name: `${cuisine} chicken rice plate`, cuisine, weightGrams: 450, calories: Math.round(target * 0.34) },
+              { mealType: 'dinner', name: `${cuisine} grilled protein salad`, cuisine, weightGrams: 380, calories: Math.round(target * 0.28) },
+              { mealType: 'snack', name: 'Fruit + yogurt', cuisine, weightGrams: 180, calories: Math.round(target * 0.1) },
+            ];
         return { date, meals, totalCalories: meals.reduce((s, m) => s + m.calories, 0) };
       }),
     };
