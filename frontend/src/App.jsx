@@ -534,17 +534,14 @@ function WeeklyPlanPage({ t, profile }) {
 function DailyLogPage({ t, profile }) {
   const today = new Date().toISOString().slice(0, 10)
   const [date, setDate] = useState(today)
-  const [form, setForm] = useState({ caloriesConsumed: 0, caloriesBurned: 0, balance: 0, notes: '' })
+  const [items, setItems] = useState([])
   const [recent, setRecent] = useState([])
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [draft, setDraft] = useState({ type: 'consumed', label: '', value: 0 })
 
   const loadDate = useCallback(async (selectedDate) => {
     const row = await apiGet(`/api/daily-logs/by-date?date=${encodeURIComponent(selectedDate)}`)
-    setForm({
-      caloriesConsumed: Number(row.caloriesConsumed || 0),
-      caloriesBurned: Number(row.caloriesBurned || 0),
-      balance: Number(row.balance || 0),
-      notes: row.notes || '',
-    })
+    setItems(row.items || [])
   }, [])
 
   const loadRecent = useCallback(async () => {
@@ -552,19 +549,28 @@ function DailyLogPage({ t, profile }) {
     setRecent(rows || [])
   }, [])
 
-  useEffect(() => {
-    loadDate(date).catch(() => {})
-  }, [date, loadDate])
-
+  useEffect(() => { loadDate(date).catch(() => {}) }, [date, loadDate])
   useEffect(() => { loadRecent().catch(() => {}) }, [loadRecent])
 
+  const addItem = () => {
+    if (!draft.label.trim()) return
+    setItems((p) => [...p, { ...draft, value: Number(draft.value || 0) }])
+    setDraft({ type: 'consumed', label: '', value: 0 })
+  }
+
+  const removeItem = (idx) => setItems((p) => p.filter((_, i) => i !== idx))
+
   const save = async () => {
-    await apiPut('/api/daily-logs/by-date', { date, ...form })
+    await apiPut('/api/daily-logs/by-date', { date, items })
+    setShowConfirm(false)
     await loadRecent()
   }
 
+  const caloriesConsumed = items.filter((x) => x.type === 'consumed').reduce((s, x) => s + Number(x.value || 0), 0)
+  const caloriesBurned = items.filter((x) => x.type === 'burned').reduce((s, x) => s + Number(x.value || 0), 0)
+  const balance = items.filter((x) => x.type === 'balance').reduce((s, x) => s + Number(x.value || 0), 0)
   const limit = profile?.dailyCaloriesTarget || 0
-  const net = Number(form.caloriesConsumed || 0) - Number(form.caloriesBurned || 0)
+  const net = caloriesConsumed - caloriesBurned
   const overUnder = net - limit
 
   return (
@@ -573,17 +579,41 @@ function DailyLogPage({ t, profile }) {
       <label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
 
       <div className="grid two">
-        <label>{t.caloriesConsumed}<input type="number" value={form.caloriesConsumed} onChange={(e) => setForm((p) => ({ ...p, caloriesConsumed: Number(e.target.value || 0) }))} /></label>
-        <label>{t.caloriesBurned}<input type="number" value={form.caloriesBurned} onChange={(e) => setForm((p) => ({ ...p, caloriesBurned: Number(e.target.value || 0) }))} /></label>
-        <label>Balance<input type="number" value={form.balance} onChange={(e) => setForm((p) => ({ ...p, balance: Number(e.target.value || 0) }))} /></label>
-        <label style={{ gridColumn: '1 / -1' }}>Notes<textarea value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={2} /></label>
+        <label>Type
+          <select value={draft.type} onChange={(e) => setDraft((p) => ({ ...p, type: e.target.value }))}>
+            <option value="consumed">Consumed</option>
+            <option value="burned">Burned</option>
+            <option value="balance">Balance</option>
+          </select>
+        </label>
+        <label>Value
+          <input type="number" value={draft.value} onChange={(e) => setDraft((p) => ({ ...p, value: Number(e.target.value || 0) }))} />
+        </label>
+        <label style={{ gridColumn: '1 / -1' }}>Item
+          <input value={draft.label} onChange={(e) => setDraft((p) => ({ ...p, label: e.target.value }))} placeholder="e.g. chicken sandwich / walking / body weight" />
+        </label>
       </div>
+      <button onClick={addItem}>Add item</button>
 
-      <button onClick={save}>{t.saveProfile}</button>
+      <ul className="list weekly-plan-list">
+        {items.map((it, idx) => (
+          <li key={idx} className="weekly-day-item">
+            <div className="weekly-day-head">
+              <strong>{it.type}</strong>
+              <strong>{Number(it.value || 0)}</strong>
+            </div>
+            <div>{it.label}</div>
+            <button className="ghost-btn" onClick={() => removeItem(idx)}>Remove</button>
+          </li>
+        ))}
+      </ul>
+
+      <button className="modern-save-btn" onClick={() => setShowConfirm(true)}>Save daily log</button>
 
       <p><strong>{t.dailyLimit}:</strong> {limit} kcal</p>
       <p><strong>{t.netCalories}:</strong> {net} kcal</p>
       <p><strong>{t.overUnder}:</strong> {overUnder > 0 ? `+${overUnder}` : overUnder} kcal</p>
+      <p><strong>Balance:</strong> {balance}</p>
 
       <h3>Recent logs</h3>
       <ul className="list">
@@ -593,6 +623,19 @@ function DailyLogPage({ t, profile }) {
           </li>
         ))}
       </ul>
+
+      {showConfirm && (
+        <div className="confirm-overlay" onClick={() => setShowConfirm(false)}>
+          <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
+            <h4>Confirm save</h4>
+            <p>Save this daily log for {date}?</p>
+            <div className="confirm-actions">
+              <button className="primary-btn" onClick={save}>Yes, save</button>
+              <button className="ghost-btn" onClick={() => setShowConfirm(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

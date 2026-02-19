@@ -16,7 +16,7 @@ export class DailyLogsController {
   @Put('by-date')
   upsertByDate(
     @CurrentUser() user: AppUser,
-    @Body() body: { date: string; caloriesConsumed?: number; caloriesBurned?: number; balance?: number; notes?: string },
+    @Body() body: { date: string; items?: Array<{ type: 'consumed' | 'burned' | 'balance'; label: string; value: number }> },
   ) {
     return this.service.upsertByDate(String(user._id), body);
   }

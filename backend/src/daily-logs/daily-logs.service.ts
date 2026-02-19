@@ -11,23 +11,28 @@ export class DailyLogsService {
     const item = await this.model.findOne({ userId: new Types.ObjectId(userId), date }).lean();
     return item || {
       date,
+      items: [],
       caloriesConsumed: 0,
       caloriesBurned: 0,
       balance: 0,
-      notes: '',
     };
   }
 
-  async upsertByDate(userId: string, payload: { date: string; caloriesConsumed?: number; caloriesBurned?: number; balance?: number; notes?: string }) {
+  async upsertByDate(userId: string, payload: { date: string; items?: Array<{ type: 'consumed' | 'burned' | 'balance'; label: string; value: number }> }) {
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const caloriesConsumed = items.filter((x) => x.type === 'consumed').reduce((s, x) => s + Number(x.value || 0), 0);
+    const caloriesBurned = items.filter((x) => x.type === 'burned').reduce((s, x) => s + Number(x.value || 0), 0);
+    const balance = items.filter((x) => x.type === 'balance').reduce((s, x) => s + Number(x.value || 0), 0);
+
     return this.model.findOneAndUpdate(
       { userId: new Types.ObjectId(userId), date: payload.date },
       {
         userId: new Types.ObjectId(userId),
         date: payload.date,
-        caloriesConsumed: Number(payload.caloriesConsumed || 0),
-        caloriesBurned: Number(payload.caloriesBurned || 0),
-        balance: Number(payload.balance || 0),
-        notes: payload.notes || '',
+        items,
+        caloriesConsumed,
+        caloriesBurned,
+        balance,
       },
       { upsert: true, new: true },
     );

@@ -3,6 +3,18 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type DailyLogDocument = HydratedDocument<DailyLog>;
 
+@Schema({ _id: false })
+class DailyLogItem {
+  @Prop({ required: true, enum: ['consumed', 'burned', 'balance'] })
+  type: 'consumed' | 'burned' | 'balance';
+
+  @Prop({ required: true })
+  label: string;
+
+  @Prop({ default: 0 })
+  value: number;
+}
+
 @Schema({ timestamps: true })
 export class DailyLog {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
@@ -10,6 +22,9 @@ export class DailyLog {
 
   @Prop({ required: true, index: true })
   date: string; // YYYY-MM-DD
+
+  @Prop({ type: [DailyLogItem], default: [] })
+  items: DailyLogItem[];
 
   @Prop({ default: 0 })
   caloriesConsumed: number;
@@ -19,9 +34,6 @@ export class DailyLog {
 
   @Prop({ default: 0 })
   balance: number;
-
-  @Prop({ default: '' })
-  notes: string;
 }
 
 export const DailyLogSchema = SchemaFactory.createForClass(DailyLog);
