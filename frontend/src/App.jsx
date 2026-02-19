@@ -243,7 +243,14 @@ function ProfilePage({ t, profile, reloadProfile }) {
   const [form, setForm] = useState(null)
   const [editing, setEditing] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showPhotoMenu, setShowPhotoMenu] = useState(false)
   const [showPhotoPreview, setShowPhotoPreview] = useState(false)
+  const [showCropper, setShowCropper] = useState(false)
+  const [cropImage, setCropImage] = useState('')
+  const [cropPos, setCropPos] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [dragging, setDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const photoInputRef = useRef(null)
 
   useEffect(() => {
@@ -289,51 +296,67 @@ function ProfilePage({ t, profile, reloadProfile }) {
     setForm({ ...profile, cuisinesText: (profile.cuisines || []).join(', ') })
   }
 
+  const beginCropFromFile = (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropImage(String(reader.result || ''))
+      setCropPos({ x: 0, y: 0 })
+      setZoom(1)
+      setShowCropper(true)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const applyCrop = async () => {
+    if (!cropImage) return
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image()
+      el.onload = () => resolve(el)
+      el.onerror = reject
+      el.src = cropImage
+    })
+
+    const size = 320
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')
+
+    const cover = Math.max(size / img.width, size / img.height)
+    const baseW = img.width * cover
+    const baseH = img.height * cover
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+    ctx.clip()
+    ctx.translate(size / 2 + cropPos.x, size / 2 + cropPos.y)
+    ctx.scale(zoom, zoom)
+    ctx.drawImage(img, -baseW / 2, -baseH / 2, baseW, baseH)
+    ctx.restore()
+
+    setForm((p) => ({ ...p, photoUrl: canvas.toDataURL('image/jpeg', 0.92) }))
+    setShowCropper(false)
+  }
+
   if (!profile || !form) return <section className="card">{t.loading}</section>
   return (
     <section className="card profile-card">
       <div className="profile-title-row">
         <h2>{t.profile}</h2>
-        <button
-          className={`icon-pencil ${editing ? 'cancel' : ''}`}
-          onClick={() => (editing ? cancelEdit() : setEditing(true))}
-          title={editing ? 'Cancel edit' : 'Edit profile'}
-        >
-          {editing ? '✕' : '✎'}
-        </button>
+        <button className={`icon-pencil ${editing ? 'cancel' : ''}`} onClick={() => (editing ? cancelEdit() : setEditing(true))} title={editing ? 'Cancel edit' : 'Edit profile'}>{editing ? '✕' : '✎'}</button>
       </div>
 
       <div className="profile-hero">
-        <div className="avatar-crop-wrap" onClick={() => form.photoUrl && setShowPhotoPreview(true)} role={form.photoUrl ? 'button' : undefined}>
+        <div className="avatar-crop-wrap" onClick={() => setShowPhotoMenu(true)} role="button">
           {form.photoUrl ? <img src={form.photoUrl} alt="profile" className="profile-avatar" /> : <div className="profile-avatar profile-avatar-fallback">{(form.name || 'U').charAt(0).toUpperCase()}</div>}
-          {editing && (
-            <button className="avatar-edit-btn" onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click() }} title="Change photo">✎</button>
-          )}
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              const reader = new FileReader()
-              reader.onload = () => setForm((p) => ({ ...p, photoUrl: String(reader.result || '') }))
-              reader.readAsDataURL(file)
-            }}
-          />
         </div>
         <div>
           <strong>{form.name || 'User'}</strong>
           <p>{profile.email}</p>
         </div>
       </div>
-
-      {editing && (
-        <div className="profile-actions-row profile-actions-top">
-          <button className="primary-btn" onClick={() => setShowConfirm(true)}>{t.saveProfile}</button>
-        </div>
-      )}
 
       <div className="grid two">
         <label>{t.name}<input disabled={!editing} value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label>
@@ -345,6 +368,12 @@ function ProfilePage({ t, profile, reloadProfile }) {
         <label>{t.activityLevel}<select disabled={!editing} value={form.activityLevel || 'moderate'} onChange={(e) => setForm((p) => ({ ...p, activityLevel: e.target.value }))}><option value="low">{t.low}</option><option value="moderate">{t.moderate}</option><option value="high">{t.high}</option></select></label>
         <label>{t.cuisines}<input disabled={!editing} value={form.cuisinesText || ''} onChange={(e) => setForm((p) => ({ ...p, cuisinesText: e.target.value }))} /></label>
       </div>
+
+      {editing && (
+        <div className="profile-actions-row profile-actions-bottom">
+          <button className="primary-btn" onClick={() => setShowConfirm(true)}>{t.saveProfile}</button>
+        </div>
+      )}
 
       <div className="profile-metrics-stack">
         <div><span>{t.maintenanceCalories}</span><strong>{profile?.maintenanceCalories || 0}</strong></div>
@@ -365,6 +394,44 @@ function ProfilePage({ t, profile, reloadProfile }) {
       )}
 
       {timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}
+
+      {showPhotoMenu && (
+        <div className="confirm-overlay" onClick={() => setShowPhotoMenu(false)}>
+          <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
+            <h4>Profile image</h4>
+            <div className="confirm-actions profile-image-actions">
+              {form.photoUrl && <button className="ghost-btn" onClick={() => { setShowPhotoMenu(false); setShowPhotoPreview(true) }}>View image</button>}
+              {editing && <button className="primary-btn" onClick={() => { setShowPhotoMenu(false); photoInputRef.current?.click() }}>Update image</button>}
+              <button className="ghost-btn" onClick={() => setShowPhotoMenu(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => beginCropFromFile(e.target.files?.[0])} />
+
+      {showCropper && (
+        <div className="photo-preview-overlay" onClick={() => setShowCropper(false)}>
+          <div className="photo-preview-card" onClick={(e) => e.stopPropagation()}>
+            <h4>Adjust profile photo</h4>
+            <div
+              className="crop-stage"
+              onPointerDown={(e) => { setDragging(true); setDragStart({ x: e.clientX - cropPos.x, y: e.clientY - cropPos.y }) }}
+              onPointerMove={(e) => { if (!dragging) return; setCropPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }) }}
+              onPointerUp={() => setDragging(false)}
+              onPointerLeave={() => setDragging(false)}
+            >
+              <img src={cropImage} alt="crop" className="crop-image" style={{ transform: `translate(calc(-50% + ${cropPos.x}px), calc(-50% + ${cropPos.y}px)) scale(${zoom})` }} />
+              <div className="crop-circle" />
+            </div>
+            <label>Zoom<input type="range" min="1" max="2.5" step="0.01" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} /></label>
+            <div className="confirm-actions">
+              <button className="primary-btn" onClick={applyCrop}>Apply</button>
+              <button className="ghost-btn" onClick={() => setShowCropper(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPhotoPreview && form.photoUrl && (
         <div className="photo-preview-overlay" onClick={() => setShowPhotoPreview(false)}>
