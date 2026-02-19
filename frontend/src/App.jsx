@@ -133,7 +133,6 @@ function AuthPage({ t, onAuthenticated }) {
 function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout, profile, onOpenProfile }) {
   const items = [
     { to: '/', label: t.dashboard, end: true, icon: '📊' },
-    { to: '/profile', label: t.profile, icon: '👤' },
     { to: '/weekly-plan', label: t.weeklyPlan, icon: '🗓️' },
     { to: '/daily-log', label: t.dailyLog, icon: '📝' },
     { to: '/reminders', label: t.reminders, icon: '⏰' },
@@ -155,24 +154,15 @@ function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout, prof
             </NavLink>
           ))}
         </nav>
-        <div className="menu-controls">
-          <button className="nav-item control-item" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
-            <span className="sidebar-icon" aria-hidden="true">{theme === 'light' ? '🌙' : '☀️'}</span>
-            <span className="sidebar-label">{t.mode}: {theme === 'light' ? t.light : t.dark}</span>
-          </button>
-          <button className="nav-item control-item" onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>
-            <span className="sidebar-icon" aria-hidden="true">🌐</span>
-            <span className="sidebar-label">{t.language}: {lang === 'en' ? t.english : t.arabic}</span>
-          </button>
-          <button className="nav-item control-item logout-item" onClick={onLogout}>
-            <span className="sidebar-icon" aria-hidden="true">🚪</span>
-            <span className="sidebar-label">{t.logoutLabel}</span>
-          </button>
-        </div>
         <button className="profile-dock" onClick={onOpenProfile}>
           {profile?.photoUrl ? <img src={profile.photoUrl} alt="profile" className="profile-dock-avatar" /> : <span className="profile-dock-avatar profile-dock-fallback">{(profile?.name || 'U').charAt(0).toUpperCase()}</span>}
           <span>{profile?.name || t.profile}</span>
         </button>
+        <div className="menu-switches" aria-label="quick toggles">
+          <button className={`switch-icon ${theme === 'dark' ? 'on' : ''}`} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title={t.mode} aria-label={t.mode}>{theme === 'light' ? '🌙' : '☀️'}</button>
+          <button className={`switch-icon ${lang === 'ar' ? 'on' : ''}`} onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} title={t.language} aria-label={t.language}>🌐</button>
+          <button className="switch-icon logout" onClick={onLogout} title={t.logoutLabel} aria-label={t.logoutLabel}>🚪</button>
+        </div>
       </aside>
     </>
   )
@@ -316,7 +306,7 @@ function ProfilePage({ t, profile, reloadProfile }) {
       <div className="grid two">
         <label>{t.name}<input disabled={!editing} value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label>
         <label>{t.country}<input disabled={!editing} value={form.country || ''} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} /></label>
-        <label>Photo URL<input disabled={!editing} value={form.photoUrl || ''} onChange={(e) => setForm((p) => ({ ...p, photoUrl: e.target.value }))} /></label>
+        <label>{t.profilePhoto || 'Profile photo'}<input disabled={!editing} type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => setForm((p) => ({ ...p, photoUrl: String(reader.result || '') })); reader.readAsDataURL(file); }} /></label>
         <label>{t.currentWeight}<input disabled={!editing} type="number" value={form.currentWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, currentWeightKg: e.target.value }))} /></label>
         <label>{t.targetWeight}<input disabled={!editing} type="number" value={form.targetWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, targetWeightKg: e.target.value }))} /></label>
         <label>{t.height}<input disabled={!editing} type="number" value={form.heightCm || 0} onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))} /></label>
