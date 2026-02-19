@@ -160,7 +160,7 @@ function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout, prof
         </button>
         <div className="menu-switches" aria-label="quick toggles">
           <button className={`switch-icon ${theme === 'dark' ? 'on' : ''}`} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title={t.mode} aria-label={t.mode}>{theme === 'light' ? '🌙' : '☀️'}</button>
-          <button className={`switch-icon ${lang === 'ar' ? 'on' : ''}`} onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} title={t.language} aria-label={t.language}>🌐</button>
+          <button className={`switch-icon ${lang === 'ar' ? 'on' : ''}`} onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} title={t.language} aria-label={t.language}>{lang === 'en' ? 'AR' : 'EN'}</button>
           <button className="switch-icon logout" onClick={onLogout} title={t.logoutLabel} aria-label={t.logoutLabel}>🚪</button>
         </div>
       </aside>
