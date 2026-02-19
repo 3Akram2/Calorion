@@ -9,6 +9,7 @@ import { RemindersModule } from './reminders/reminders.module';
 import { AuthModule } from './auth/auth.module';
 import { WeeklyPlanModule } from './weekly-plan/weekly-plan.module';
 import { TipsModule } from './tips/tips.module';
+import { DailyLogsModule } from './daily-logs/daily-logs.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TipsModule } from './tips/tips.module';
     AuthModule,
     WeeklyPlanModule,
     TipsModule,
+    DailyLogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
