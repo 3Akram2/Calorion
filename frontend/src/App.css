@@ -102,6 +102,14 @@ nav { display: grid; gap: 8px; margin-top: 14px; }
 .switch-icon.logout {
   border-color: rgba(239, 91, 91, .45);
 }
+.modern-save-btn {
+  margin-top: 10px;
+  background: linear-gradient(135deg, #4f64ff, #6f7dff);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 20px rgba(79,100,255,.35);
+}
 button { border: 0; border-radius: 10px; padding: 10px 12px; font-weight: 600; cursor: pointer; }
 
 .content { padding: 16px; max-width: 1000px; margin: 0 auto; }
