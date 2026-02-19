@@ -299,19 +299,37 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
   border: 2px solid rgba(79,100,255,.45);
 }
 .avatar-crop-wrap .profile-avatar { width: 100%; height: 100%; border: 0; }
-.avatar-edit-btn {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: #4f64ff;
-  color: #fff;
-  border: 2px solid #111c34;
-  padding: 0;
-}
 .profile-metrics-stack { display: grid; gap: 8px; margin: 12px 0; }
+.profile-actions-bottom { justify-content: flex-start; }
+.profile-image-actions { justify-content: flex-start; flex-wrap: wrap; }
+.crop-stage {
+  position: relative;
+  width: min(320px, 78vw);
+  height: min(320px, 78vw);
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #0b1220;
+  touch-action: none;
+}
+.crop-image {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.crop-circle {
+  position: absolute;
+  inset: 12%;
+  border-radius: 999px;
+  box-shadow: 0 0 0 999px rgba(0,0,0,.42);
+  border: 2px solid rgba(255,255,255,.9);
+  pointer-events: none;
+}
 .profile-metrics-stack > div { background: rgba(127,127,127,.14); border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; }
 .profile-metrics-stack span { opacity: .85; font-size: 13px; }
 .profile-metrics-stack strong { font-size: 18px; }
