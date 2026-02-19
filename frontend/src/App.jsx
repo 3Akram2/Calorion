@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   NavLink,
   Navigate,
@@ -243,6 +243,7 @@ function ProfilePage({ t, profile, reloadProfile }) {
   const [form, setForm] = useState(null)
   const [editing, setEditing] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const photoInputRef = useRef(null)
 
   useEffect(() => {
     if (!profile) return
@@ -292,21 +293,50 @@ function ProfilePage({ t, profile, reloadProfile }) {
     <section className="card profile-card">
       <div className="profile-title-row">
         <h2>{t.profile}</h2>
-        {!editing && <button className="icon-pencil" onClick={() => setEditing(true)} title="Edit">✏️</button>}
+        <button
+          className={`icon-pencil ${editing ? 'cancel' : ''}`}
+          onClick={() => (editing ? cancelEdit() : setEditing(true))}
+          title={editing ? 'Cancel edit' : 'Edit profile'}
+        >
+          {editing ? '✕' : '✎'}
+        </button>
       </div>
 
       <div className="profile-hero">
-        {form.photoUrl ? <img src={form.photoUrl} alt="profile" className="profile-avatar" /> : <div className="profile-avatar profile-avatar-fallback">{(form.name || 'U').charAt(0).toUpperCase()}</div>}
+        <div className="avatar-crop-wrap">
+          {form.photoUrl ? <img src={form.photoUrl} alt="profile" className="profile-avatar" /> : <div className="profile-avatar profile-avatar-fallback">{(form.name || 'U').charAt(0).toUpperCase()}</div>}
+          {editing && (
+            <button className="avatar-edit-btn" onClick={() => photoInputRef.current?.click()} title="Change photo">✎</button>
+          )}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const reader = new FileReader()
+              reader.onload = () => setForm((p) => ({ ...p, photoUrl: String(reader.result || '') }))
+              reader.readAsDataURL(file)
+            }}
+          />
+        </div>
         <div>
           <strong>{form.name || 'User'}</strong>
           <p>{profile.email}</p>
         </div>
       </div>
 
+      {editing && (
+        <div className="profile-actions-row profile-actions-top">
+          <button className="primary-btn" onClick={() => setShowConfirm(true)}>{t.saveProfile}</button>
+        </div>
+      )}
+
       <div className="grid two">
         <label>{t.name}<input disabled={!editing} value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label>
         <label>{t.country}<input disabled={!editing} value={form.country || ''} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} /></label>
-        <label>{t.profilePhoto || 'Profile photo'}<input disabled={!editing} type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => setForm((p) => ({ ...p, photoUrl: String(reader.result || '') })); reader.readAsDataURL(file); }} /></label>
         <label>{t.currentWeight}<input disabled={!editing} type="number" value={form.currentWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, currentWeightKg: e.target.value }))} /></label>
         <label>{t.targetWeight}<input disabled={!editing} type="number" value={form.targetWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, targetWeightKg: e.target.value }))} /></label>
         <label>{t.height}<input disabled={!editing} type="number" value={form.heightCm || 0} onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))} /></label>
@@ -320,13 +350,6 @@ function ProfilePage({ t, profile, reloadProfile }) {
         <div><span>{t.calorieCut}</span><strong>{profile?.calorieDeficit || 0}</strong></div>
         <div><span>{t.dailyTarget}</span><strong>{profile?.dailyCaloriesTarget || 0}</strong></div>
       </div>
-
-      {editing && (
-        <div className="profile-actions-row">
-          <button className="primary-btn" onClick={() => setShowConfirm(true)}>{t.saveProfile}</button>
-          <button className="ghost-btn" onClick={cancelEdit}>{t.back}</button>
-        </div>
-      )}
 
       <hr />
       <h3>{t.ramadanMode}</h3>
