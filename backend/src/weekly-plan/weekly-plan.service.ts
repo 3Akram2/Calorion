@@ -1,0 +1,120 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { UsersService } from '../users/users.service';
+import { WeeklyPlan, WeeklyPlanDocument } from './weekly-plan.schema';
+
+@Injectable()
+export class WeeklyPlanService {
+  private readonly logger = new Logger(WeeklyPlanService.name);
+  private readonly model = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+
+  constructor(
+    @InjectModel(WeeklyPlan.name) private readonly weeklyPlanModel: Model<WeeklyPlanDocument>,
+    private readonly usersService: UsersService,
+  ) {
+    setInterval(() => this.generateMissingForAllUsers().catch((e) => this.logger.error(e?.message || e)), 6 * 60 * 60 * 1000);
+  }
+
+  private getWeekStart(d = new Date()) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diff);
+    return date.toISOString().slice(0, 10);
+  }
+
+  async getCurrentUserPlan(userId: string) {
+    const weekStart = this.getWeekStart();
+    let plan = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(userId), weekStart }).lean();
+    if (!plan) {
+      await this.generatePlanForUser(userId, true).catch(() => null);
+      plan = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(userId), weekStart }).lean();
+    }
+    return plan;
+  }
+
+  async generatePlanForUser(userId: string, fillCurrentWeekOnly = false) {
+    const user = await this.usersService.getByFirebaseUid(userId);
+    const weekStart = this.getWeekStart();
+    const lastWeek = this.getWeekStart(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+
+    const existing = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(user._id), weekStart });
+    if (existing && !fillCurrentWeekOnly) return existing;
+
+    const previousPlan = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(user._id), weekStart: lastWeek }).lean();
+    const generated = await this.generateWithAi({ user, weekStart, previousPlan });
+
+    const days = generated.days || [];
+    return this.weeklyPlanModel.findOneAndUpdate(
+      { userId: new Types.ObjectId(user._id), weekStart },
+      { userId: new Types.ObjectId(user._id), weekStart, days, generatedBy: 'ai' },
+      { upsert: true, new: true },
+    );
+  }
+
+  async generateMissingForAllUsers() {
+    const users = await this.usersService.listAll();
+    for (const user of users) {
+      await this.generatePlanForUser(String(user.firebaseUid)).catch(() => null);
+    }
+  }
+
+  private async generateWithAi(params: { user: any; weekStart: string; previousPlan: any }) {
+    const { user, weekStart, previousPlan } = params;
+    const apiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY;
+    const fallback = this.fallbackPlan(weekStart, user);
+    if (!apiKey) return fallback;
+
+    const prompt = `Generate a 7-day food plan as STRICT JSON with shape {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"breakfast|lunch|dinner|snack","name":"...","cuisine":"...","weightGrams":number,"calories":number}],"totalCalories":number}]}. Target calories/day around ${user.dailyCaloriesTarget || 2000}. User preferred cuisines: ${(user.cuisines || []).join(', ') || 'none'}. User nationality/country: ${user.country || 'unknown'}. Avoid repeating last week meals. Last week plan: ${JSON.stringify(previousPlan?.days || []).slice(0, 2500)} Week starts: ${weekStart}`;
+
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0.3,
+          max_tokens: 1700,
+          messages: [
+            { role: 'system', content: 'You are a nutrition planner. Return JSON only.' },
+            { role: 'user', content: prompt },
+          ],
+        }),
+      });
+      const payload: any = await response.json();
+      const content = String(payload?.choices?.[0]?.message?.content || '').trim();
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1) return fallback;
+      const parsed = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
+      if (!Array.isArray(parsed?.days) || !parsed.days.length) return fallback;
+      return parsed;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private fallbackPlan(weekStart: string, user: any) {
+    const cuisines = user?.cuisines?.length ? user.cuisines : ['Mediterranean', 'Middle Eastern'];
+    const target = Number(user?.dailyCaloriesTarget || 2000);
+    const dates = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
+      return d.toISOString().slice(0, 10);
+    });
+
+    return {
+      days: dates.map((date, i) => {
+        const cuisine = cuisines[i % cuisines.length];
+        const meals = [
+          { mealType: 'breakfast', name: `${cuisine} breakfast bowl`, cuisine, weightGrams: 320, calories: Math.round(target * 0.28) },
+          { mealType: 'lunch', name: `${cuisine} chicken rice plate`, cuisine, weightGrams: 450, calories: Math.round(target * 0.34) },
+          { mealType: 'dinner', name: `${cuisine} grilled protein salad`, cuisine, weightGrams: 380, calories: Math.round(target * 0.28) },
+          { mealType: 'snack', name: 'Fruit + yogurt', cuisine, weightGrams: 180, calories: Math.round(target * 0.1) },
+        ];
+        return { date, meals, totalCalories: meals.reduce((s, m) => s + m.calories, 0) };
+      }),
+    };
+  }
+}
