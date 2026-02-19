@@ -323,6 +323,29 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
 .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: grid; place-items: center; z-index: 90; }
 .confirm-card { width: min(420px, 92vw); background: #111c34; border: 1px solid rgba(148,163,184,.35); border-radius: 14px; padding: 16px; }
 .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.photo-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  display: grid;
+  place-items: center;
+  z-index: 95;
+}
+.photo-preview-card {
+  width: min(420px, 92vw);
+  background: #111c34;
+  border: 1px solid rgba(148,163,184,.35);
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+.photo-preview-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+}
 .profile-avatar {
   width: 64px;
   height: 64px;

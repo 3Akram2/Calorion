@@ -243,6 +243,7 @@ function ProfilePage({ t, profile, reloadProfile }) {
   const [form, setForm] = useState(null)
   const [editing, setEditing] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [showPhotoPreview, setShowPhotoPreview] = useState(false)
   const photoInputRef = useRef(null)
 
   useEffect(() => {
@@ -303,10 +304,10 @@ function ProfilePage({ t, profile, reloadProfile }) {
       </div>
 
       <div className="profile-hero">
-        <div className="avatar-crop-wrap">
+        <div className="avatar-crop-wrap" onClick={() => form.photoUrl && setShowPhotoPreview(true)} role={form.photoUrl ? 'button' : undefined}>
           {form.photoUrl ? <img src={form.photoUrl} alt="profile" className="profile-avatar" /> : <div className="profile-avatar profile-avatar-fallback">{(form.name || 'U').charAt(0).toUpperCase()}</div>}
           {editing && (
-            <button className="avatar-edit-btn" onClick={() => photoInputRef.current?.click()} title="Change photo">✎</button>
+            <button className="avatar-edit-btn" onClick={(e) => { e.stopPropagation(); photoInputRef.current?.click() }} title="Change photo">✎</button>
           )}
           <input
             ref={photoInputRef}
@@ -364,6 +365,15 @@ function ProfilePage({ t, profile, reloadProfile }) {
       )}
 
       {timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}
+
+      {showPhotoPreview && form.photoUrl && (
+        <div className="photo-preview-overlay" onClick={() => setShowPhotoPreview(false)}>
+          <div className="photo-preview-card" onClick={(e) => e.stopPropagation()}>
+            <img src={form.photoUrl} alt="Profile preview" className="photo-preview-img" />
+            <button className="ghost-btn" onClick={() => setShowPhotoPreview(false)}>Close</button>
+          </div>
+        </div>
+      )}
 
       {showConfirm && (
         <div className="confirm-overlay" onClick={() => setShowConfirm(false)}>
