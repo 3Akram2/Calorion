@@ -536,7 +536,7 @@ function DailyLogPage({ t, profile }) {
   const [date, setDate] = useState(today)
   const [items, setItems] = useState([])
   const [recent, setRecent] = useState([])
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [showAddConfirm, setShowAddConfirm] = useState(false)
   const [draft, setDraft] = useState({ type: 'consumed', label: '', value: 0 })
 
   const loadDate = useCallback(async (selectedDate) => {
@@ -549,21 +549,31 @@ function DailyLogPage({ t, profile }) {
     setRecent(rows || [])
   }, [])
 
+  const persistItems = useCallback(async (nextItems) => {
+    await apiPut('/api/daily-logs/by-date', { date, items: nextItems })
+    await loadRecent()
+  }, [date, loadRecent])
+
   useEffect(() => { loadDate(date).catch(() => {}) }, [date, loadDate])
   useEffect(() => { loadRecent().catch(() => {}) }, [loadRecent])
 
-  const addItem = () => {
+  const askAddItem = () => {
     if (!draft.label.trim()) return
-    setItems((p) => [...p, { ...draft, value: Number(draft.value || 0) }])
-    setDraft({ type: 'consumed', label: '', value: 0 })
+    setShowAddConfirm(true)
   }
 
-  const removeItem = (idx) => setItems((p) => p.filter((_, i) => i !== idx))
+  const confirmAddItem = async () => {
+    const nextItems = [...items, { ...draft, value: Number(draft.value || 0) }]
+    setItems(nextItems)
+    setDraft({ type: 'consumed', label: '', value: 0 })
+    setShowAddConfirm(false)
+    await persistItems(nextItems)
+  }
 
-  const save = async () => {
-    await apiPut('/api/daily-logs/by-date', { date, items })
-    setShowConfirm(false)
-    await loadRecent()
+  const removeItem = async (idx) => {
+    const nextItems = items.filter((_, i) => i !== idx)
+    setItems(nextItems)
+    await persistItems(nextItems)
   }
 
   const caloriesConsumed = items.filter((x) => x.type === 'consumed').reduce((s, x) => s + Number(x.value || 0), 0)
@@ -593,22 +603,20 @@ function DailyLogPage({ t, profile }) {
           <input value={draft.label} onChange={(e) => setDraft((p) => ({ ...p, label: e.target.value }))} placeholder="e.g. chicken sandwich / walking / body weight" />
         </label>
       </div>
-      <button onClick={addItem}>Add item</button>
+      <button className="modern-save-btn" onClick={askAddItem}>Add item</button>
 
-      <ul className="list weekly-plan-list">
+      <ul className="daily-log-cards">
         {items.map((it, idx) => (
-          <li key={idx} className="weekly-day-item">
-            <div className="weekly-day-head">
-              <strong>{it.type}</strong>
+          <li key={`${it.type}-${idx}`} className={`daily-log-card ${it.type}`}>
+            <div className="daily-log-card-top">
+              <strong className="pill">{it.type}</strong>
               <strong>{Number(it.value || 0)}</strong>
             </div>
-            <div>{it.label}</div>
+            <div className="daily-log-card-label">{it.label}</div>
             <button className="ghost-btn" onClick={() => removeItem(idx)}>Remove</button>
           </li>
         ))}
       </ul>
-
-      <button className="modern-save-btn" onClick={() => setShowConfirm(true)}>Save daily log</button>
 
       <p><strong>{t.dailyLimit}:</strong> {limit} kcal</p>
       <p><strong>{t.netCalories}:</strong> {net} kcal</p>
@@ -624,14 +632,14 @@ function DailyLogPage({ t, profile }) {
         ))}
       </ul>
 
-      {showConfirm && (
-        <div className="confirm-overlay" onClick={() => setShowConfirm(false)}>
+      {showAddConfirm && (
+        <div className="confirm-overlay" onClick={() => setShowAddConfirm(false)}>
           <div className="confirm-card" onClick={(e) => e.stopPropagation()}>
-            <h4>Confirm save</h4>
-            <p>Save this daily log for {date}?</p>
+            <h4>Confirm add item</h4>
+            <p>Add this item to {date} and save automatically?</p>
             <div className="confirm-actions">
-              <button className="primary-btn" onClick={save}>Yes, save</button>
-              <button className="ghost-btn" onClick={() => setShowConfirm(false)}>Cancel</button>
+              <button className="primary-btn" onClick={confirmAddItem}>Yes, add item</button>
+              <button className="ghost-btn" onClick={() => setShowAddConfirm(false)}>Cancel</button>
             </div>
           </div>
         </div>
