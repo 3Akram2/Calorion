@@ -123,11 +123,11 @@ function AuthPage({ t, onAuthenticated }) {
 
 function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout }) {
   const items = [
-    { to: '/', label: t.dashboard, end: true },
-    { to: '/profile', label: t.profile },
-    { to: '/weekly-plan', label: t.weeklyPlan },
-    { to: '/daily-log', label: t.dailyLog },
-    { to: '/reminders', label: t.reminders },
+    { to: '/', label: t.dashboard, end: true, icon: '📊' },
+    { to: '/profile', label: t.profile, icon: '👤' },
+    { to: '/weekly-plan', label: t.weeklyPlan, icon: '🗓️' },
+    { to: '/daily-log', label: t.dailyLog, icon: '📝' },
+    { to: '/reminders', label: t.reminders, icon: '⏰' },
   ]
 
   return (
@@ -141,14 +141,24 @@ function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout }) {
         <nav>
           {items.map((i) => (
             <NavLink key={i.to} to={i.to} end={i.end} onClick={onClose} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              {i.label}
+              <span className="sidebar-icon" aria-hidden="true">{i.icon}</span>
+              <span className="sidebar-label">{i.label}</span>
             </NavLink>
           ))}
         </nav>
         <div className="menu-controls">
-          <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{t.mode}: {theme === 'light' ? t.light : t.dark}</button>
-          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>{t.language}: {lang === 'en' ? t.english : t.arabic}</button>
-          <button onClick={onLogout}>{t.logoutLabel}</button>
+          <button className="nav-item control-item" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+            <span className="sidebar-icon" aria-hidden="true">{theme === 'light' ? '🌙' : '☀️'}</span>
+            <span className="sidebar-label">{t.mode}: {theme === 'light' ? t.light : t.dark}</span>
+          </button>
+          <button className="nav-item control-item" onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}>
+            <span className="sidebar-icon" aria-hidden="true">🌐</span>
+            <span className="sidebar-label">{t.language}: {lang === 'en' ? t.english : t.arabic}</span>
+          </button>
+          <button className="nav-item control-item logout-item" onClick={onLogout}>
+            <span className="sidebar-icon" aria-hidden="true">🚪</span>
+            <span className="sidebar-label">{t.logoutLabel}</span>
+          </button>
         </div>
       </aside>
     </>
