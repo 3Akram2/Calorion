@@ -487,7 +487,7 @@ function WeeklyPlanPage({ t }) {
             </div>
             <div className="weekly-meals">
               {(d.meals || []).map((m, i) => (
-                <div key={i} className="meal-line">{m.mealType}: {m.name} — {m.weightGrams} g ({m.calories} kcal)</div>
+                <div key={i} className="meal-line">{renderRichText(`**${m.mealType}**\n${m.name}\n${m.weightGrams} g (${m.calories} kcal)`)}</div>
               ))}
             </div>
           </li>
