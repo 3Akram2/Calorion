@@ -12,7 +12,7 @@ import {
   signOut,
 } from 'firebase/auth'
 import './App.css'
-import { apiDelete, apiGet, apiPost } from './api'
+import { apiDelete, apiGet, apiPost, apiPut } from './api'
 import { auth, googleProvider, startPhoneSignIn } from './firebase'
 import { usePersistentState } from './hooks/usePersistentState'
 import en from './locales/en.json'
@@ -458,8 +458,9 @@ function ProfilePage({ t, profile, reloadProfile }) {
   )
 }
 
-function WeeklyPlanPage({ t }) {
+function WeeklyPlanPage({ t, profile }) {
   const [plan, setPlan] = useState(null)
+  const [editing, setEditing] = useState(false)
 
   const load = useCallback(async () => {
     const data = await apiGet('/api/weekly-plan/current')
@@ -468,8 +469,24 @@ function WeeklyPlanPage({ t }) {
 
   useEffect(() => { load().catch(() => {}) }, [load])
 
-  const regenerate = async () => {
-    await apiPost('/api/weekly-plan/regenerate', {})
+  const updateMealField = (dayIdx, mealIdx, key, value) => {
+    setPlan((prev) => {
+      if (!prev) return prev
+      const days = [...(prev.days || [])]
+      const day = { ...days[dayIdx] }
+      const meals = [...(day.meals || [])]
+      meals[mealIdx] = { ...meals[mealIdx], [key]: key === 'calories' || key === 'weightGrams' ? Number(value || 0) : value }
+      day.meals = meals
+      day.totalCalories = meals.reduce((s, m) => s + Number(m.calories || 0), 0)
+      days[dayIdx] = day
+      return { ...prev, days }
+    })
+  }
+
+  const savePlan = async () => {
+    if (!plan) return
+    await apiPut('/api/weekly-plan/current', { days: plan.days || [] })
+    setEditing(false)
     await load()
   }
 
@@ -477,9 +494,12 @@ function WeeklyPlanPage({ t }) {
   return (
     <section className="card">
       <h2>{t.weeklyPlan}</h2>
-      <button onClick={regenerate}>{t.regeneratePlan}</button>
+      {profile?.ramadanMode ? <p>Ramadan-style meals are applied because Ramadan mode is ON.</p> : <p>Normal meal style is active (eggs/chicken/rice etc.).</p>}
+      <div className="profile-actions-row">
+        {!editing ? <button onClick={() => setEditing(true)}>Edit plan</button> : <button className="primary-btn" onClick={savePlan}>Save plan</button>}
+      </div>
       <ul className="list weekly-plan-list">
-        {(plan.days || []).map((d) => (
+        {(plan.days || []).map((d, dayIdx) => (
           <li key={d.date} className="weekly-day-item">
             <div className="weekly-day-head">
               <strong>{d.date}</strong>
@@ -487,7 +507,21 @@ function WeeklyPlanPage({ t }) {
             </div>
             <div className="weekly-meals">
               {(d.meals || []).map((m, i) => (
-                <div key={i} className="meal-line">{renderRichText(`**${m.mealType}**\n${m.name}\n${m.weightGrams} g (${m.calories} kcal)`)}</div>
+                <div key={i} className="meal-line">
+                  {editing ? (
+                    <div className="grid two">
+                      <label>Meal type<input value={m.mealType || ''} onChange={(e) => updateMealField(dayIdx, i, 'mealType', e.target.value)} /></label>
+                      <label>Calories<input type="number" value={m.calories || 0} onChange={(e) => updateMealField(dayIdx, i, 'calories', e.target.value)} /></label>
+                      <label>Weight (g)<input type="number" value={m.weightGrams || 0} onChange={(e) => updateMealField(dayIdx, i, 'weightGrams', e.target.value)} /></label>
+                      <label>Cuisine<input value={m.cuisine || ''} onChange={(e) => updateMealField(dayIdx, i, 'cuisine', e.target.value)} /></label>
+                      <label style={{ gridColumn: '1 / -1' }}>Foods (each line)
+                        <textarea value={m.name || ''} onChange={(e) => updateMealField(dayIdx, i, 'name', e.target.value)} rows={3} />
+                      </label>
+                    </div>
+                  ) : (
+                    renderRichText(`**${m.mealType}**\n${m.name}\n${m.weightGrams} g (${m.calories} kcal)`)
+                  )}
+                </div>
               ))}
             </div>
           </li>
@@ -643,7 +677,7 @@ function App() {
           <Route path="/" element={onboardingDone !== 'true' ? <Navigate to="/onboarding" /> : <DashboardPage t={t} profile={profile} ramadanTimings={ramadanTimings} tips={tips} />} />
           <Route path="/onboarding" element={<OnboardingWizard t={t} onDone={finishOnboarding} email={email} />} />
           <Route path="/profile" element={<ProfilePage t={t} profile={profile} reloadProfile={loadProfile} />} />
-          <Route path="/weekly-plan" element={<WeeklyPlanPage t={t} />} />
+          <Route path="/weekly-plan" element={<WeeklyPlanPage t={t} profile={profile} />} />
           <Route path="/daily-log" element={<DailyLogPage t={t} profile={profile} />} />
           <Route path="/reminders" element={<RemindersPage t={t} email={email} />} />
           <Route path="/auth" element={<Navigate to="/" />} />

@@ -21,6 +21,16 @@ export async function apiPost(path, body) {
   return res.json()
 }
 
+export async function apiPut(path, body) {
+  const res = await fetch(path, {
+    method: 'PUT',
+    headers: withAuth(JSON_HEADERS),
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`PUT ${path} failed`)
+  return res.json()
+}
+
 export async function apiDelete(path) {
   const res = await fetch(path, { method: 'DELETE', headers: withAuth() })
   if (!res.ok) throw new Error(`DELETE ${path} failed`)

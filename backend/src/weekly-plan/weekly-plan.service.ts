@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UsersService } from '../users/users.service';
@@ -67,6 +67,18 @@ export class WeeklyPlanService {
     for (const user of users) {
       await this.generatePlanForUser(String(user._id)).catch(() => null);
     }
+  }
+
+  async updateCurrentUserPlan(userId: string, body: { days?: any[] }) {
+    if (!Array.isArray(body?.days)) throw new BadRequestException('days array is required');
+    const userObjectId = new Types.ObjectId(userId);
+    const weekStart = this.getWeekStart();
+
+    return this.weeklyPlanModel.findOneAndUpdate(
+      { userId: userObjectId, weekStart },
+      { userId: userObjectId, weekStart, days: body.days, generatedBy: 'user-edit' },
+      { upsert: true, new: true },
+    );
   }
 
   private async generateWithAi(params: { user: any; weekStart: string; previousPlan: any }) {
