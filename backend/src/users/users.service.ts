@@ -99,6 +99,12 @@ export class UsersService {
     return user;
   }
 
+  async getById(id: string) {
+    const user = await this.userModel.findById(id).lean();
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
   async listAll() {
     return this.userModel.find().sort({ createdAt: -1 }).lean();
   }

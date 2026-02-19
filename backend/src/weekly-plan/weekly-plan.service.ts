@@ -24,34 +24,36 @@ export class WeeklyPlanService {
     return date.toISOString().slice(0, 10);
   }
 
-  async getCurrentUserPlan(firebaseUid: string) {
-    const user = await this.usersService.getByFirebaseUid(firebaseUid);
-    const userObjectId = new Types.ObjectId(user._id);
+  async getCurrentUserPlan(userId: string) {
+    const userObjectId = new Types.ObjectId(userId);
     const weekStart = this.getWeekStart();
 
     let plan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart }).lean();
     if (!plan) {
-      await this.generatePlanForUser(firebaseUid, true).catch(() => null);
+      await this.generatePlanForUser(userId, true).catch(() => null);
       plan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart }).lean();
     }
     return plan;
   }
 
   async generatePlanForUser(userId: string, fillCurrentWeekOnly = false) {
-    const user = await this.usersService.getByFirebaseUid(userId);
+    const userObjectId = new Types.ObjectId(userId);
+    const user = await this.usersService.getById(userId).catch(() => null);
+    if (!user) return null;
+
     const weekStart = this.getWeekStart();
     const lastWeek = this.getWeekStart(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
 
-    const existing = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(user._id), weekStart });
+    const existing = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart });
     if (existing && !fillCurrentWeekOnly) return existing;
 
-    const previousPlan = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(user._id), weekStart: lastWeek }).lean();
+    const previousPlan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart: lastWeek }).lean();
     const generated = await this.generateWithAi({ user, weekStart, previousPlan });
 
     const days = generated.days || [];
     return this.weeklyPlanModel.findOneAndUpdate(
-      { userId: new Types.ObjectId(user._id), weekStart },
-      { userId: new Types.ObjectId(user._id), weekStart, days, generatedBy: 'ai' },
+      { userId: userObjectId, weekStart },
+      { userId: userObjectId, weekStart, days, generatedBy: 'ai' },
       { upsert: true, new: true },
     );
   }
@@ -59,7 +61,7 @@ export class WeeklyPlanService {
   async generateMissingForAllUsers() {
     const users = await this.usersService.listAll();
     for (const user of users) {
-      await this.generatePlanForUser(String(user.firebaseUid)).catch(() => null);
+      await this.generatePlanForUser(String(user._id)).catch(() => null);
     }
   }
 
