@@ -55,16 +55,6 @@ nav { display: grid; gap: 8px; margin-top: 14px; }
 .nav-item.active { background: #4f64ff; color: white; }
 .sidebar-icon { width: 20px; text-align: center; }
 .sidebar-label { font-weight: 600; }
-.menu-controls { margin-top: 14px; display: grid; gap: 8px; }
-.control-item {
-  width: 100%;
-  text-align: left;
-  background: rgba(127,127,127,.12);
-  color: inherit;
-}
-.logout-item {
-  border-color: rgba(239, 91, 91, .35);
-}
 .profile-dock {
   margin-top: auto;
   width: 100%;
@@ -87,6 +77,30 @@ nav { display: grid; gap: 8px; margin-top: 14px; }
   background: #4f64ff;
   color: #fff;
   font-weight: 700;
+}
+.menu-switches {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.switch-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(127,127,127,.14);
+  border: 1px solid rgba(148,163,184,.35);
+  color: inherit;
+  display: inline-grid;
+  place-items: center;
+  font-size: 18px;
+}
+.switch-icon.on {
+  background: rgba(79,100,255,.25);
+  border-color: rgba(79,100,255,.55);
+}
+.switch-icon.logout {
+  border-color: rgba(239, 91, 91, .45);
 }
 button { border: 0; border-radius: 10px; padding: 10px 12px; font-weight: 600; cursor: pointer; }
 
