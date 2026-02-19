@@ -474,7 +474,27 @@ function WeeklyPlanPage({ t }) {
   }
 
   if (!plan) return <section className="card">{t.loading}</section>
-  return <section className="card"><h2>{t.weeklyPlan}</h2><button onClick={regenerate}>{t.regeneratePlan}</button><ul className="list">{(plan.days || []).map((d) => <li key={d.date}><div><strong>{d.date}</strong><div>{(d.meals || []).map((m, i) => <div key={i}>• {m.mealType}: {m.name} ({m.cuisine}) — {m.weightGrams}g / {m.calories} kcal</div>)}</div></div><strong>{d.totalCalories} kcal</strong></li>)}</ul></section>
+  return (
+    <section className="card">
+      <h2>{t.weeklyPlan}</h2>
+      <button onClick={regenerate}>{t.regeneratePlan}</button>
+      <ul className="list weekly-plan-list">
+        {(plan.days || []).map((d) => (
+          <li key={d.date} className="weekly-day-item">
+            <div className="weekly-day-head">
+              <strong>{d.date}</strong>
+              <strong>{d.totalCalories} kcal</strong>
+            </div>
+            <div className="weekly-meals">
+              {(d.meals || []).map((m, i) => (
+                <div key={i} className="meal-line">{m.mealType}: {m.name} — {m.weightGrams} g ({m.calories} kcal)</div>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 function DailyLogPage({ t, profile }) {
@@ -495,6 +515,19 @@ function RemindersPage({ t, email }) {
   const remove = async (id) => { await apiDelete(`/api/reminders/${id}`); load() }
 
   return <section className="card"><h2>{t.reminders}</h2><div className="grid two"><label>{t.reminderText}<input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} /></label><label>{t.time}<input type="time" value={form.time} onChange={(e) => setForm((p) => ({ ...p, time: e.target.value }))} /></label><label>{t.telegramChatId}<input value={form.telegramChatId} onChange={(e) => setForm((p) => ({ ...p, telegramChatId: e.target.value }))} /></label><label><input type="checkbox" checked={form.ramadanOnly} onChange={(e) => setForm((p) => ({ ...p, ramadanOnly: e.target.checked }))} /> {t.ramadanOnly}</label></div><button onClick={create}>{t.addReminder}</button><ul className="list">{items.map((r) => <li key={r._id}><span>{r.time} — {r.title}</span><button onClick={() => remove(r._id)}>{t.deleteLabel}</button></li>)}</ul></section>
+}
+
+function renderRichText(text) {
+  const lines = String(text || '').replace(/\\n/g, '\n').split('\n')
+  return lines.map((line, i) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/g)
+    return (
+      <span key={i}>
+        {parts.map((part, idx) => part.startsWith('**') && part.endsWith('**') ? <strong key={idx}>{part.slice(2, -2)}</strong> : <span key={idx}>{part}</span>)}
+        {i < lines.length - 1 && <br />}
+      </span>
+    )
+  })
 }
 
 function HelpAiWidget({ t, email }) {
@@ -527,7 +560,7 @@ function HelpAiWidget({ t, email }) {
   return (
     <>
       <button className="help-fab" onClick={openNewChat} title={t.aiChat}>💬</button>
-      {open && <div className="chat-overlay" onClick={() => setOpen(false)}><div className="chat-panel" onClick={(e) => e.stopPropagation()}><div className="chat-header"><strong>{t.aiChat}</strong><button className="icon-btn" onClick={() => setOpen(false)}>✕</button></div><div className="chat-box">{messages.length === 0 && <p>{t.aiPlaceholder}</p>}{messages.map((m, i) => <div key={i} className={`bubble ${m.role}`}>{m.content}</div>)}</div><div className="chat-input"><input value={text} onChange={(e) => setText(e.target.value)} placeholder={t.chatInputPlaceholder} /><button onClick={send} disabled={sending}>{sending ? '...' : t.send}</button></div></div></div>}
+      {open && <div className="chat-overlay" onClick={() => setOpen(false)}><div className="chat-panel" onClick={(e) => e.stopPropagation()}><div className="chat-header"><strong>{t.aiChat}</strong><button className="icon-btn" onClick={() => setOpen(false)}>✕</button></div><div className="chat-box">{messages.length === 0 && <p>{t.aiPlaceholder}</p>}{messages.map((m, i) => <div key={i} className={`bubble ${m.role}`}>{renderRichText(m.content)}</div>)}</div><div className="chat-input"><input value={text} onChange={(e) => setText(e.target.value)} placeholder={t.chatInputPlaceholder} /><button onClick={send} disabled={sending}>{sending ? '...' : t.send}</button></div></div></div>}
     </>
   )
 }
