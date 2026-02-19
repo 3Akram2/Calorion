@@ -17,6 +17,9 @@ export class User {
   @Prop({ default: '' })
   phoneNumber: string;
 
+  @Prop({ default: '' })
+  photoUrl: string;
+
   @Prop({ default: 'user', enum: ['user', 'admin'] })
   role: 'user' | 'admin';
 
