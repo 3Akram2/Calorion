@@ -24,12 +24,15 @@ export class WeeklyPlanService {
     return date.toISOString().slice(0, 10);
   }
 
-  async getCurrentUserPlan(userId: string) {
+  async getCurrentUserPlan(firebaseUid: string) {
+    const user = await this.usersService.getByFirebaseUid(firebaseUid);
+    const userObjectId = new Types.ObjectId(user._id);
     const weekStart = this.getWeekStart();
-    let plan = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(userId), weekStart }).lean();
+
+    let plan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart }).lean();
     if (!plan) {
-      await this.generatePlanForUser(userId, true).catch(() => null);
-      plan = await this.weeklyPlanModel.findOne({ userId: new Types.ObjectId(userId), weekStart }).lean();
+      await this.generatePlanForUser(firebaseUid, true).catch(() => null);
+      plan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart }).lean();
     }
     return plan;
   }
