@@ -20,6 +20,15 @@ import ar from './locales/ar.json'
 
 const copy = { en, ar }
 
+function isRamadanNow() {
+  try {
+    const todayHijriMonth = new Intl.DateTimeFormat('en-TN-u-ca-islamic', { month: 'numeric' }).format(new Date())
+    return Number(todayHijriMonth) === 9
+  } catch {
+    return false
+  }
+}
+
 function AuthPage({ t, onAuthenticated }) {
   const [method, setMethod] = useState('phone')
   const [phone, setPhone] = useState('')
@@ -259,6 +268,14 @@ function ProfilePage({ t, profile, reloadProfile }) {
     setTimings(d)
   }
 
+  useEffect(() => {
+    if (!form?.ramadanMode) {
+      setTimings(null)
+      return
+    }
+    fetchTimings().catch(() => {})
+  }, [form?.ramadanMode, form?.ramadanCity, form?.ramadanCountry])
+
   const submitSave = async () => {
     if (!form) return
     await apiPost('/api/users/profile', {
@@ -333,7 +350,6 @@ function ProfilePage({ t, profile, reloadProfile }) {
         </div>
       )}
 
-      <button onClick={fetchTimings}>{t.fetchTodayTimings}</button>
       {timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}
 
       {showConfirm && (
@@ -452,11 +468,23 @@ function App() {
   const loadProfile = useCallback(async () => {
     if (!email) return
     try {
-      const p = await apiGet('/api/users/profile')
+      let p = await apiGet('/api/users/profile')
+
+      if (!p.ramadanMode && isRamadanNow()) {
+        await apiPost('/api/users/profile', {
+          ...p,
+          ramadanMode: true,
+          cuisines: p.cuisines || [],
+        })
+        p = await apiGet('/api/users/profile')
+      }
+
       setProfile(p)
       if (p.ramadanMode && p.ramadanCity && p.ramadanCountry) {
         const times = await apiGet(`/api/users/ramadan/timings?city=${encodeURIComponent(p.ramadanCity)}&country=${encodeURIComponent(p.ramadanCountry)}`)
         setRamadanTimings(times)
+      } else {
+        setRamadanTimings(null)
       }
     } catch {
       setProfile(null)
