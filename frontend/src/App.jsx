@@ -224,8 +224,11 @@ function DashboardPage({ t, profile, ramadanTimings, tips }) {
 
       <h3>{t.todayTips}</h3>
       <div className="tips-grid">
-        {(tips || []).map((tip) => (
-          <article key={tip._id} className="tip-card">{tip.text}</article>
+        {(tips || []).map((tip, idx) => (
+          <article key={tip._id} className="tip-card">
+            <div className="tip-chip">#{idx + 1}</div>
+            <p>{tip.text}</p>
+          </article>
         ))}
       </div>
     </section>

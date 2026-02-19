@@ -93,8 +93,37 @@ input, select {
 .metric span { font-size: 12px; opacity: .8; display: block; }
 .metric strong { font-size: 20px; }
 .home-page .home-subtitle { margin-bottom: 10px; opacity: .85; }
-.tips-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
-.tip-card { background: rgba(127,127,127,.14); border-radius: 12px; padding: 12px; line-height: 1.45; }
+.tips-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+.tip-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  padding: 14px;
+  line-height: 1.5;
+  border: 1px solid rgba(79, 100, 255, .35);
+  background:
+    radial-gradient(120% 180% at 0% 0%, rgba(79,100,255,.18) 0%, rgba(79,100,255,0) 60%),
+    linear-gradient(160deg, rgba(127,127,127,.16), rgba(127,127,127,.08));
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .12);
+}
+.tip-card p { margin: 0; }
+.tip-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(79, 100, 255, .22);
+  color: #dbe4ff;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
 
 .table-wrap { overflow-x: auto; margin-bottom: 16px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
