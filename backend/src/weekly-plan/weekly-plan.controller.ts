@@ -2,7 +2,7 @@ import { Controller, Get, Post } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { WeeklyPlanService } from './weekly-plan.service';
 
-type AppUser = { firebaseUid?: string };
+type AppUser = { _id: string };
 
 @Controller('weekly-plan')
 export class WeeklyPlanController {
@@ -10,11 +10,11 @@ export class WeeklyPlanController {
 
   @Get('current')
   getCurrent(@CurrentUser() user: AppUser) {
-    return this.weeklyPlanService.getCurrentUserPlan(String(user.firebaseUid));
+    return this.weeklyPlanService.getCurrentUserPlan(String(user._id));
   }
 
   @Post('regenerate')
   regenerate(@CurrentUser() user: AppUser) {
-    return this.weeklyPlanService.generatePlanForUser(String(user.firebaseUid), false);
+    return this.weeklyPlanService.generatePlanForUser(String(user._id), false);
   }
 }
