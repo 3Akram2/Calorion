@@ -532,12 +532,69 @@ function WeeklyPlanPage({ t, profile }) {
 }
 
 function DailyLogPage({ t, profile }) {
-  const [consumed, setConsumed] = useState('0')
-  const [burned, setBurned] = useState('0')
-  const limit = profile?.dailyCaloriesTarget || 0
-  const overUnder = Number(consumed || 0) - limit
+  const today = new Date().toISOString().slice(0, 10)
+  const [date, setDate] = useState(today)
+  const [form, setForm] = useState({ caloriesConsumed: 0, caloriesBurned: 0, balance: 0, notes: '' })
+  const [recent, setRecent] = useState([])
 
-  return <section className="card"><h2>{t.dailyLog}</h2><div className="grid two"><label>{t.caloriesConsumed}<input type="number" value={consumed} onChange={(e) => setConsumed(e.target.value)} /></label><label>{t.caloriesBurned}<input type="number" value={burned} onChange={(e) => setBurned(e.target.value)} /></label></div><p><strong>{t.dailyLimit}:</strong> {limit} kcal</p><p><strong>{t.netCalories}:</strong> {Number(consumed || 0) - Number(burned || 0)} kcal</p><p><strong>{t.overUnder}:</strong> {overUnder > 0 ? `+${overUnder}` : overUnder} kcal</p></section>
+  const loadDate = useCallback(async (selectedDate) => {
+    const row = await apiGet(`/api/daily-logs/by-date?date=${encodeURIComponent(selectedDate)}`)
+    setForm({
+      caloriesConsumed: Number(row.caloriesConsumed || 0),
+      caloriesBurned: Number(row.caloriesBurned || 0),
+      balance: Number(row.balance || 0),
+      notes: row.notes || '',
+    })
+  }, [])
+
+  const loadRecent = useCallback(async () => {
+    const rows = await apiGet('/api/daily-logs/recent')
+    setRecent(rows || [])
+  }, [])
+
+  useEffect(() => {
+    loadDate(date).catch(() => {})
+  }, [date, loadDate])
+
+  useEffect(() => { loadRecent().catch(() => {}) }, [loadRecent])
+
+  const save = async () => {
+    await apiPut('/api/daily-logs/by-date', { date, ...form })
+    await loadRecent()
+  }
+
+  const limit = profile?.dailyCaloriesTarget || 0
+  const net = Number(form.caloriesConsumed || 0) - Number(form.caloriesBurned || 0)
+  const overUnder = net - limit
+
+  return (
+    <section className="card">
+      <h2>{t.dailyLog}</h2>
+      <label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+
+      <div className="grid two">
+        <label>{t.caloriesConsumed}<input type="number" value={form.caloriesConsumed} onChange={(e) => setForm((p) => ({ ...p, caloriesConsumed: Number(e.target.value || 0) }))} /></label>
+        <label>{t.caloriesBurned}<input type="number" value={form.caloriesBurned} onChange={(e) => setForm((p) => ({ ...p, caloriesBurned: Number(e.target.value || 0) }))} /></label>
+        <label>Balance<input type="number" value={form.balance} onChange={(e) => setForm((p) => ({ ...p, balance: Number(e.target.value || 0) }))} /></label>
+        <label style={{ gridColumn: '1 / -1' }}>Notes<textarea value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={2} /></label>
+      </div>
+
+      <button onClick={save}>{t.saveProfile}</button>
+
+      <p><strong>{t.dailyLimit}:</strong> {limit} kcal</p>
+      <p><strong>{t.netCalories}:</strong> {net} kcal</p>
+      <p><strong>{t.overUnder}:</strong> {overUnder > 0 ? `+${overUnder}` : overUnder} kcal</p>
+
+      <h3>Recent logs</h3>
+      <ul className="list">
+        {recent.map((r) => (
+          <li key={r._id || r.date}>
+            <span>{r.date} — net {Number(r.caloriesConsumed || 0) - Number(r.caloriesBurned || 0)} kcal — balance {Number(r.balance || 0)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 function RemindersPage({ t, email }) {
