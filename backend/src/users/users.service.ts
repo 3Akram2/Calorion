@@ -30,7 +30,7 @@ export class UsersService {
       ramadanCountry: payload.ramadanCountry || '',
     };
 
-    const dailyCaloriesTarget = this.calorieService.calculateDailyTarget({
+    const calorieProfile = this.calorieService.calculateCalorieProfile({
       currentWeightKg: safeUpdate.currentWeightKg,
       heightCm: safeUpdate.heightCm,
       goal,
@@ -39,10 +39,7 @@ export class UsersService {
 
     return this.userModel.findOneAndUpdate(
       { email: safeUpdate.email },
-      {
-        ...safeUpdate,
-        dailyCaloriesTarget,
-      },
+      { ...safeUpdate, ...calorieProfile },
       { upsert: true, new: true },
     );
   }
@@ -69,7 +66,7 @@ export class UsersService {
       return existing;
     }
 
-    const dailyCaloriesTarget = this.calorieService.calculateDailyTarget({
+    const calorieProfile = this.calorieService.calculateCalorieProfile({
       currentWeightKg: 70,
       heightCm: 170,
       goal: 'small-loss',
@@ -84,7 +81,7 @@ export class UsersService {
       role: shouldBeAdmin ? 'admin' : 'user',
       goal: 'small-loss',
       activityLevel: 'moderate',
-      dailyCaloriesTarget,
+      ...calorieProfile,
     });
   }
 

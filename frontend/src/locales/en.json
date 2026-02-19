@@ -86,5 +86,10 @@
   "sendOtp": "Send OTP",
   "verifyOtp": "Verify OTP",
   "continueGoogle": "Continue with Google",
-  "logoutLabel": "Logout"
+  "logoutLabel": "Logout",
+  "maintenanceCalories": "Maintenance calories",
+  "calorieCut": "Calorie cut",
+  "todayTips": "Today tips",
+  "saveProfile": "Save profile",
+  "regeneratePlan": "Regenerate weekly plan"
 }

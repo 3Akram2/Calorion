@@ -206,12 +206,21 @@ function OnboardingWizard({ t, onDone, email }) {
   )
 }
 
-function DashboardPage({ t, profile, ramadanTimings }) {
-  return <section className="card"><h1>{t.dashboard}</h1><p>{t.dailyTarget}: <strong>{profile?.dailyCaloriesTarget || 0} kcal</strong></p>{profile?.ramadanMode && ramadanTimings && <p>{t.fajr}: <strong>{ramadanTimings.fajr}</strong> · {t.maghrib}: <strong>{ramadanTimings.maghrib}</strong></p>}<p>{t.subtitle}</p></section>
+function DashboardPage({ t, profile, ramadanTimings, tips }) {
+  return <section className="card"><h1>{t.dashboard}</h1><p>{t.dailyTarget}: <strong>{profile?.dailyCaloriesTarget || 0} kcal</strong></p><p>{t.maintenanceCalories}: <strong>{profile?.maintenanceCalories || 0} kcal</strong> · {t.calorieCut}: <strong>{profile?.calorieDeficit || 0} kcal</strong></p>{profile?.ramadanMode && ramadanTimings && <p>{t.fajr}: <strong>{ramadanTimings.fajr}</strong> · {t.maghrib}: <strong>{ramadanTimings.maghrib}</strong></p>}<p>{t.subtitle}</p><hr/><h3>{t.todayTips}</h3><ul className="list">{(tips || []).map((tip) => <li key={tip._id}><span>{tip.text}</span></li>)}</ul></section>
 }
 
 function ProfilePage({ t, profile, reloadProfile }) {
   const [timings, setTimings] = useState(null)
+  const [form, setForm] = useState(null)
+
+  useEffect(() => {
+    if (!profile) return
+    setForm({
+      ...profile,
+      cuisinesText: (profile.cuisines || []).join(', '),
+    })
+  }, [profile])
 
   const fetchTimings = async () => {
     if (!profile?.ramadanCity || !profile?.ramadanCountry) return
@@ -219,31 +228,39 @@ function ProfilePage({ t, profile, reloadProfile }) {
     setTimings(d)
   }
 
-  const toggleRamadan = async () => {
+  const saveProfile = async () => {
+    if (!form) return
     await apiPost('/api/users/profile', {
-      ...profile,
-      email: profile.email,
-      name: profile.name,
-      cuisines: profile.cuisines || [],
-      ramadanMode: !profile.ramadanMode,
+      ...form,
+      cuisines: String(form.cuisinesText || '').split(',').map((x) => x.trim()).filter(Boolean),
+      currentWeightKg: Number(form.currentWeightKg || 0),
+      targetWeightKg: Number(form.targetWeightKg || 0),
+      heightCm: Number(form.heightCm || 0),
     })
     reloadProfile()
   }
 
-  if (!profile) return <section className="card">{t.loading}</section>
-  return <section className="card"><h2>{t.profile}</h2><div className="grid two"><div><strong>{t.name}:</strong> {profile.name}</div><div><strong>{t.email}:</strong> {profile.email}</div><div><strong>{t.country}:</strong> {profile.country}</div><div><strong>{t.goal}:</strong> {profile.goal}</div><div><strong>{t.currentWeight}:</strong> {profile.currentWeightKg}</div><div><strong>{t.targetWeight}:</strong> {profile.targetWeightKg}</div></div><hr /><h3>{t.ramadanMode}</h3><p>{t.ramadanDescription}</p><button onClick={toggleRamadan}>{profile.ramadanMode ? t.disable : t.enable}</button>{profile.ramadanMode && <button onClick={fetchTimings}>{t.fetchTodayTimings}</button>}{timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}</section>
+  if (!profile || !form) return <section className="card">{t.loading}</section>
+  return <section className="card"><h2>{t.profile}</h2><div className="grid two"><label>{t.name}<input value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label><label>{t.country}<input value={form.country || ''} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} /></label><label>{t.currentWeight}<input type="number" value={form.currentWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, currentWeightKg: e.target.value }))} /></label><label>{t.targetWeight}<input type="number" value={form.targetWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, targetWeightKg: e.target.value }))} /></label><label>{t.height}<input type="number" value={form.heightCm || 0} onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))} /></label><label>{t.goal}<select value={form.goal || 'small-loss'} onChange={(e) => setForm((p) => ({ ...p, goal: e.target.value }))}><option value="big-loss">{t.bigLoss}</option><option value="small-loss">{t.smallLoss}</option><option value="maintain">{t.maintain}</option></select></label><label>{t.activityLevel}<select value={form.activityLevel || 'moderate'} onChange={(e) => setForm((p) => ({ ...p, activityLevel: e.target.value }))}><option value="low">{t.low}</option><option value="moderate">{t.moderate}</option><option value="high">{t.high}</option></select></label><label>{t.cuisines}<input value={form.cuisinesText || ''} onChange={(e) => setForm((p) => ({ ...p, cuisinesText: e.target.value }))} /></label></div><p>{t.maintenanceCalories}: <strong>{profile?.maintenanceCalories || 0}</strong> · {t.calorieCut}: <strong>{profile?.calorieDeficit || 0}</strong> · {t.dailyTarget}: <strong>{profile?.dailyCaloriesTarget || 0}</strong></p><button onClick={saveProfile}>{t.saveProfile}</button><hr /><h3>{t.ramadanMode}</h3><p>{t.ramadanDescription}</p><button onClick={() => setForm((p) => ({ ...p, ramadanMode: !p.ramadanMode }))}>{form.ramadanMode ? t.disable : t.enable}</button><button onClick={fetchTimings}>{t.fetchTodayTimings}</button>{timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}</section>
 }
 
-function WeeklyPlanPage({ t, profile }) {
-  const target = profile?.dailyCaloriesTarget || 2000
-  const meals = useMemo(() => [
-    { name: t.breakfast, calories: Math.round(target * 0.28) },
-    { name: t.lunch, calories: Math.round(target * 0.34) },
-    { name: t.dinner, calories: Math.round(target * 0.28) },
-    { name: t.snack, calories: Math.round(target * 0.1) },
-  ], [t, target])
+function WeeklyPlanPage({ t }) {
+  const [plan, setPlan] = useState(null)
 
-  return <section className="card"><h2>{t.weeklyPlan}</h2><ul className="list">{meals.map((m) => <li key={m.name}><span>{m.name}</span><strong>{m.calories} kcal</strong></li>)}</ul><p><strong>{t.totalCalories}:</strong> {target} kcal</p></section>
+  const load = useCallback(async () => {
+    const data = await apiGet('/api/weekly-plan/current')
+    setPlan(data)
+  }, [])
+
+  useEffect(() => { load().catch(() => {}) }, [load])
+
+  const regenerate = async () => {
+    await apiPost('/api/weekly-plan/regenerate', {})
+    await load()
+  }
+
+  if (!plan) return <section className="card">{t.loading}</section>
+  return <section className="card"><h2>{t.weeklyPlan}</h2><button onClick={regenerate}>{t.regeneratePlan}</button><ul className="list">{(plan.days || []).map((d) => <li key={d.date}><div><strong>{d.date}</strong><div>{(d.meals || []).map((m, i) => <div key={i}>• {m.mealType}: {m.name} ({m.cuisine}) — {m.weightGrams}g / {m.calories} kcal</div>)}</div></div><strong>{d.totalCalories} kcal</strong></li>)}</ul></section>
 }
 
 function DailyLogPage({ t, profile }) {
@@ -300,6 +317,7 @@ function App() {
   const [profile, setProfile] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [ramadanTimings, setRamadanTimings] = useState(null)
+  const [tips, setTips] = useState([])
 
   const email = useMemo(() => {
     try { return JSON.parse(appUser || '{}')?.email || '' } catch { return '' }
@@ -338,6 +356,7 @@ function App() {
   }, [email])
 
   useEffect(() => { loadProfile() }, [loadProfile])
+  useEffect(() => { apiGet('/api/tips/today').then(setTips).catch(() => setTips([])) }, [])
   useEffect(() => { if (appUser && onboardingDone !== 'true') navigate('/onboarding') }, [onboardingDone, navigate, appUser])
 
   const finishOnboarding = async () => { setOnboardingDone('true'); await loadProfile(); navigate('/') }
@@ -353,10 +372,10 @@ function App() {
       <Menu t={t} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} open={menuOpen} onClose={() => setMenuOpen(false)} onLogout={logout} />
       <section className="content">
         <Routes>
-          <Route path="/" element={onboardingDone !== 'true' ? <Navigate to="/onboarding" /> : <DashboardPage t={t} profile={profile} ramadanTimings={ramadanTimings} />} />
+          <Route path="/" element={onboardingDone !== 'true' ? <Navigate to="/onboarding" /> : <DashboardPage t={t} profile={profile} ramadanTimings={ramadanTimings} tips={tips} />} />
           <Route path="/onboarding" element={<OnboardingWizard t={t} onDone={finishOnboarding} email={email} />} />
           <Route path="/profile" element={<ProfilePage t={t} profile={profile} reloadProfile={loadProfile} />} />
-          <Route path="/weekly-plan" element={<WeeklyPlanPage t={t} profile={profile} />} />
+          <Route path="/weekly-plan" element={<WeeklyPlanPage t={t} />} />
           <Route path="/daily-log" element={<DailyLogPage t={t} profile={profile} />} />
           <Route path="/reminders" element={<RemindersPage t={t} email={email} />} />
           <Route path="/auth" element={<Navigate to="/" />} />

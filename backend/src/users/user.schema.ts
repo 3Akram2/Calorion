@@ -42,6 +42,12 @@ export class User {
   activityLevel: 'low' | 'moderate' | 'high';
 
   @Prop({ default: 0 })
+  maintenanceCalories: number;
+
+  @Prop({ default: 0 })
+  calorieDeficit: number;
+
+  @Prop({ default: 0 })
   dailyCaloriesTarget: number;
 
   @Prop({ default: false })

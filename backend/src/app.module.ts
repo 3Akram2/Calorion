@@ -7,6 +7,8 @@ import { ChatsModule } from './chats/chats.module';
 import { UsersModule } from './users/users.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { AuthModule } from './auth/auth.module';
+import { WeeklyPlanModule } from './weekly-plan/weekly-plan.module';
+import { TipsModule } from './tips/tips.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { AuthModule } from './auth/auth.module';
     AdminModule,
     RemindersModule,
     AuthModule,
+    WeeklyPlanModule,
+    TipsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
