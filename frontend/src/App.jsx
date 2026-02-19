@@ -207,7 +207,29 @@ function OnboardingWizard({ t, onDone, email }) {
 }
 
 function DashboardPage({ t, profile, ramadanTimings, tips }) {
-  return <section className="card"><h1>{t.dashboard}</h1><p>{t.dailyTarget}: <strong>{profile?.dailyCaloriesTarget || 0} kcal</strong></p><p>{t.maintenanceCalories}: <strong>{profile?.maintenanceCalories || 0} kcal</strong> · {t.calorieCut}: <strong>{profile?.calorieDeficit || 0} kcal</strong></p>{profile?.ramadanMode && ramadanTimings && <p>{t.fajr}: <strong>{ramadanTimings.fajr}</strong> · {t.maghrib}: <strong>{ramadanTimings.maghrib}</strong></p>}<p>{t.subtitle}</p><hr/><h3>{t.todayTips}</h3><ul className="list">{(tips || []).map((tip) => <li key={tip._id}><span>{tip.text}</span></li>)}</ul></section>
+  return (
+    <section className="card home-page">
+      <h1>{t.dashboard}</h1>
+      <p className="home-subtitle">{t.subtitle}</p>
+
+      <div className="metrics-grid">
+        <div className="metric"><span>{t.dailyTarget}</span><strong>{profile?.dailyCaloriesTarget || 0} kcal</strong></div>
+        <div className="metric"><span>{t.maintenanceCalories}</span><strong>{profile?.maintenanceCalories || 0} kcal</strong></div>
+        <div className="metric"><span>{t.calorieCut}</span><strong>{profile?.calorieDeficit || 0} kcal</strong></div>
+      </div>
+
+      {profile?.ramadanMode && ramadanTimings && (
+        <p>{t.fajr}: <strong>{ramadanTimings.fajr}</strong> · {t.maghrib}: <strong>{ramadanTimings.maghrib}</strong></p>
+      )}
+
+      <h3>{t.todayTips}</h3>
+      <div className="tips-grid">
+        {(tips || []).map((tip) => (
+          <article key={tip._id} className="tip-card">{tip.text}</article>
+        ))}
+      </div>
+    </section>
+  )
 }
 
 function ProfilePage({ t, profile, reloadProfile }) {

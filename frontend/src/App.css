@@ -92,6 +92,9 @@ input, select {
 .metric { background: rgba(127,127,127,.14); border-radius: 12px; padding: 10px; }
 .metric span { font-size: 12px; opacity: .8; display: block; }
 .metric strong { font-size: 20px; }
+.home-page .home-subtitle { margin-bottom: 10px; opacity: .85; }
+.tips-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+.tip-card { background: rgba(127,127,127,.14); border-radius: 12px; padding: 12px; line-height: 1.45; }
 
 .table-wrap { overflow-x: auto; margin-bottom: 16px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
