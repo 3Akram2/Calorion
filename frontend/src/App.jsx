@@ -121,7 +121,7 @@ function AuthPage({ t, onAuthenticated }) {
   )
 }
 
-function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout }) {
+function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout, profile, onOpenProfile }) {
   const items = [
     { to: '/', label: t.dashboard, end: true, icon: '📊' },
     { to: '/profile', label: t.profile, icon: '👤' },
@@ -160,6 +160,10 @@ function Menu({ t, theme, setTheme, lang, setLang, open, onClose, onLogout }) {
             <span className="sidebar-label">{t.logoutLabel}</span>
           </button>
         </div>
+        <button className="profile-dock" onClick={onOpenProfile}>
+          {profile?.photoUrl ? <img src={profile.photoUrl} alt="profile" className="profile-dock-avatar" /> : <span className="profile-dock-avatar profile-dock-fallback">{(profile?.name || 'U').charAt(0).toUpperCase()}</span>}
+          <span>{profile?.name || t.profile}</span>
+        </button>
       </aside>
     </>
   )
@@ -266,7 +270,37 @@ function ProfilePage({ t, profile, reloadProfile }) {
   }
 
   if (!profile || !form) return <section className="card">{t.loading}</section>
-  return <section className="card"><h2>{t.profile}</h2><div className="grid two"><label>{t.name}<input value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label><label>{t.country}<input value={form.country || ''} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} /></label><label>{t.currentWeight}<input type="number" value={form.currentWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, currentWeightKg: e.target.value }))} /></label><label>{t.targetWeight}<input type="number" value={form.targetWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, targetWeightKg: e.target.value }))} /></label><label>{t.height}<input type="number" value={form.heightCm || 0} onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))} /></label><label>{t.goal}<select value={form.goal || 'small-loss'} onChange={(e) => setForm((p) => ({ ...p, goal: e.target.value }))}><option value="big-loss">{t.bigLoss}</option><option value="small-loss">{t.smallLoss}</option><option value="maintain">{t.maintain}</option></select></label><label>{t.activityLevel}<select value={form.activityLevel || 'moderate'} onChange={(e) => setForm((p) => ({ ...p, activityLevel: e.target.value }))}><option value="low">{t.low}</option><option value="moderate">{t.moderate}</option><option value="high">{t.high}</option></select></label><label>{t.cuisines}<input value={form.cuisinesText || ''} onChange={(e) => setForm((p) => ({ ...p, cuisinesText: e.target.value }))} /></label></div><p>{t.maintenanceCalories}: <strong>{profile?.maintenanceCalories || 0}</strong> · {t.calorieCut}: <strong>{profile?.calorieDeficit || 0}</strong> · {t.dailyTarget}: <strong>{profile?.dailyCaloriesTarget || 0}</strong></p><button onClick={saveProfile}>{t.saveProfile}</button><hr /><h3>{t.ramadanMode}</h3><p>{t.ramadanDescription}</p><button onClick={() => setForm((p) => ({ ...p, ramadanMode: !p.ramadanMode }))}>{form.ramadanMode ? t.disable : t.enable}</button><button onClick={fetchTimings}>{t.fetchTodayTimings}</button>{timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}</section>
+  return (
+    <section className="card profile-card">
+      <h2>{t.profile}</h2>
+      <div className="profile-hero">
+        {form.photoUrl ? <img src={form.photoUrl} alt="profile" className="profile-avatar" /> : <div className="profile-avatar profile-avatar-fallback">{(form.name || 'U').charAt(0).toUpperCase()}</div>}
+        <div>
+          <strong>{form.name || 'User'}</strong>
+          <p>{profile.email}</p>
+        </div>
+      </div>
+      <div className="grid two">
+        <label>{t.name}<input value={form.name || ''} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} /></label>
+        <label>{t.country}<input value={form.country || ''} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))} /></label>
+        <label>Photo URL<input value={form.photoUrl || ''} onChange={(e) => setForm((p) => ({ ...p, photoUrl: e.target.value }))} /></label>
+        <label>{t.currentWeight}<input type="number" value={form.currentWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, currentWeightKg: e.target.value }))} /></label>
+        <label>{t.targetWeight}<input type="number" value={form.targetWeightKg || 0} onChange={(e) => setForm((p) => ({ ...p, targetWeightKg: e.target.value }))} /></label>
+        <label>{t.height}<input type="number" value={form.heightCm || 0} onChange={(e) => setForm((p) => ({ ...p, heightCm: e.target.value }))} /></label>
+        <label>{t.goal}<select value={form.goal || 'small-loss'} onChange={(e) => setForm((p) => ({ ...p, goal: e.target.value }))}><option value="big-loss">{t.bigLoss}</option><option value="small-loss">{t.smallLoss}</option><option value="maintain">{t.maintain}</option></select></label>
+        <label>{t.activityLevel}<select value={form.activityLevel || 'moderate'} onChange={(e) => setForm((p) => ({ ...p, activityLevel: e.target.value }))}><option value="low">{t.low}</option><option value="moderate">{t.moderate}</option><option value="high">{t.high}</option></select></label>
+        <label>{t.cuisines}<input value={form.cuisinesText || ''} onChange={(e) => setForm((p) => ({ ...p, cuisinesText: e.target.value }))} /></label>
+      </div>
+      <p>{t.maintenanceCalories}: <strong>{profile?.maintenanceCalories || 0}</strong> · {t.calorieCut}: <strong>{profile?.calorieDeficit || 0}</strong> · {t.dailyTarget}: <strong>{profile?.dailyCaloriesTarget || 0}</strong></p>
+      <button onClick={saveProfile}>{t.saveProfile}</button>
+      <hr />
+      <h3>{t.ramadanMode}</h3>
+      <p>{t.ramadanDescription}</p>
+      <button onClick={() => setForm((p) => ({ ...p, ramadanMode: !p.ramadanMode }))}>{form.ramadanMode ? t.disable : t.enable}</button>
+      <button onClick={fetchTimings}>{t.fetchTodayTimings}</button>
+      {timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}
+    </section>
+  )
 }
 
 function WeeklyPlanPage({ t }) {
@@ -394,7 +428,7 @@ function App() {
   return (
     <main className={`app ${theme}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <header className="topbar"><button className="icon-btn" onClick={() => setMenuOpen(true)}>☰</button><strong>Calorion</strong></header>
-      <Menu t={t} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} open={menuOpen} onClose={() => setMenuOpen(false)} onLogout={logout} />
+      <Menu t={t} theme={theme} setTheme={setTheme} lang={lang} setLang={setLang} open={menuOpen} onClose={() => setMenuOpen(false)} onLogout={logout} profile={profile} onOpenProfile={() => { navigate('/profile'); setMenuOpen(false) }} />
       <section className="content">
         <Routes>
           <Route path="/" element={onboardingDone !== 'true' ? <Navigate to="/onboarding" /> : <DashboardPage t={t} profile={profile} ramadanTimings={ramadanTimings} tips={tips} />} />
