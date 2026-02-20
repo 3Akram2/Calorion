@@ -4,6 +4,22 @@ import { Model, Types } from 'mongoose';
 import { UsersService } from '../users/users.service';
 import { WeeklyPlan, WeeklyPlanDocument } from './weekly-plan.schema';
 
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+type Meal = {
+  mealType: MealType;
+  name: string;
+  cuisine: string;
+  weightGrams: number;
+  calories: number;
+};
+
+type DayPlan = {
+  date: string;
+  meals: Meal[];
+  totalCalories: number;
+};
+
 @Injectable()
 export class WeeklyPlanService {
   private readonly logger = new Logger(WeeklyPlanService.name);
@@ -24,6 +40,77 @@ export class WeeklyPlanService {
     return date.toISOString().slice(0, 10);
   }
 
+  private clampNumber(value: unknown, min: number, max: number, fallback = min) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  private sanitizeText(value: unknown, maxLen = 80) {
+    return String(value || '')
+      .replace(/[\u0000-\u001F\u007F]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, maxLen);
+  }
+
+  private sanitizeList(values: unknown, maxItems = 6, itemMaxLen = 30) {
+    if (!Array.isArray(values)) return [] as string[];
+    return values
+      .map((v) => this.sanitizeText(v, itemMaxLen))
+      .filter(Boolean)
+      .slice(0, maxItems);
+  }
+
+  private sanitizePlanDays(days: unknown, targetCalories: number): DayPlan[] {
+    if (!Array.isArray(days)) throw new BadRequestException('days must be an array');
+    if (days.length < 1 || days.length > 7) throw new BadRequestException('days must contain between 1 and 7 days');
+
+    return days.map((day, dayIndex) => {
+      const dateRaw = this.sanitizeText((day as any)?.date, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) throw new BadRequestException(`invalid date at day index ${dayIndex}`);
+
+      const mealsInput = (day as any)?.meals;
+      if (!Array.isArray(mealsInput) || mealsInput.length < 1 || mealsInput.length > 8) {
+        throw new BadRequestException(`invalid meals at day index ${dayIndex}`);
+      }
+
+      const meals: Meal[] = mealsInput.map((meal: any, mealIndex: number) => {
+        const mealType = this.sanitizeText(meal?.mealType, 20).toLowerCase() as MealType;
+        if (!['breakfast', 'lunch', 'dinner', 'snack'].includes(mealType)) {
+          throw new BadRequestException(`invalid mealType at day ${dayIndex}, meal ${mealIndex}`);
+        }
+
+        return {
+          mealType,
+          name: this.sanitizeText(meal?.name, 300),
+          cuisine: this.sanitizeText(meal?.cuisine, 40) || 'mixed',
+          weightGrams: this.clampNumber(meal?.weightGrams, 20, 1500, 120),
+          calories: this.clampNumber(meal?.calories, 30, 2200, Math.round(targetCalories / 4)),
+        };
+      });
+
+      return {
+        date: dateRaw,
+        meals,
+        totalCalories: meals.reduce((s, m) => s + m.calories, 0),
+      };
+    });
+  }
+
+  private sanitizePreviousPlan(days: unknown) {
+    if (!Array.isArray(days)) return [];
+    return days.slice(0, 7).map((d) => ({
+      date: this.sanitizeText((d as any)?.date, 10),
+      meals: Array.isArray((d as any)?.meals)
+        ? (d as any).meals.slice(0, 4).map((m: any) => ({
+            mealType: this.sanitizeText(m?.mealType, 20),
+            name: this.sanitizeText(m?.name, 180),
+          }))
+        : [],
+    }));
+  }
+
   async getCurrentUserPlan(userId: string) {
     const userObjectId = new Types.ObjectId(userId);
     const weekStart = this.getWeekStart();
@@ -33,10 +120,10 @@ export class WeeklyPlanService {
       (d?.meals || []).some((m: any) => /\b(mediterranean|middle eastern)\b/i.test(String(m?.name || ''))),
     );
 
-    if (!plan || hasGenericMeals) {
-      await this.generatePlanForUser(userId, true).catch(() => null);
-      plan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart }).lean();
+    if (!plan || (plan.generatedBy === 'ai' && hasGenericMeals)) {
+      plan = await this.generatePlanForUser(userId, true).catch(() => null);
     }
+
     return plan;
   }
 
@@ -69,14 +156,18 @@ export class WeeklyPlanService {
     }
   }
 
-  async updateCurrentUserPlan(userId: string, body: { days?: any[] }) {
-    if (!Array.isArray(body?.days)) throw new BadRequestException('days array is required');
+  async updateCurrentUserPlan(userId: string, body: { days?: unknown[] }) {
     const userObjectId = new Types.ObjectId(userId);
     const weekStart = this.getWeekStart();
+    const target = 2000;
+    const days = this.sanitizePlanDays(body?.days, target);
+
+    const payloadSize = JSON.stringify(days).length;
+    if (payloadSize > 50000) throw new BadRequestException('payload too large');
 
     return this.weeklyPlanModel.findOneAndUpdate(
       { userId: userObjectId, weekStart },
-      { userId: userObjectId, weekStart, days: body.days, generatedBy: 'user-edit' },
+      { userId: userObjectId, weekStart, days, generatedBy: 'user-edit' },
       { upsert: true, new: true },
     );
   }
@@ -87,11 +178,16 @@ export class WeeklyPlanService {
     const fallback = this.fallbackPlan(weekStart, user);
     if (!apiKey) return fallback;
 
+    const safeCountry = this.sanitizeText(user?.country, 40) || 'unknown';
+    const safeCuisines = this.sanitizeList(user?.cuisines, 8, 30);
+    const targetCalories = this.clampNumber(user?.dailyCaloriesTarget, 1200, 5000, 2000);
+    const safePreviousPlan = this.sanitizePreviousPlan(previousPlan?.days);
+
     const ramadanHint = user.ramadanMode
       ? 'Ramadan mode ON: include 3 meal windows (iftar after Maghrib + ~30 min, light sweet snack between meals, suhoor before Fajr). Add hydration guidance and keep foods culturally familiar.'
       : '';
 
-    const prompt = `Generate a 7-day food plan as STRICT JSON with shape {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"breakfast|lunch|dinner|snack","name":"...","cuisine":"...","weightGrams":number,"calories":number}],"totalCalories":number}]}. VERY IMPORTANT: each meal must include REAL FOODS, not generic labels like 'Mediterranean meal'. In meal.name, include concrete components with line breaks, e.g. '100g grilled chicken\n150g rice\n150g salad'. Target calories/day around ${user.dailyCaloriesTarget || 2000}. User preferred cuisines: ${(user.cuisines || []).join(', ') || 'none'}. User nationality/country: ${user.country || 'unknown'}. ${ramadanHint} Avoid repeating last week meals. Last week plan: ${JSON.stringify(previousPlan?.days || []).slice(0, 2500)} Week starts: ${weekStart}`;
+    const prompt = `Generate a 7-day food plan as STRICT JSON with shape {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"breakfast|lunch|dinner|snack","name":"...","cuisine":"...","weightGrams":number,"calories":number}],"totalCalories":number}]}. VERY IMPORTANT: each meal must include REAL FOODS, not generic labels like 'Mediterranean meal'. In meal.name, include concrete components with line breaks, e.g. '100g grilled chicken\n150g rice\n150g salad'. Target calories/day around ${targetCalories}. User preferred cuisines: ${safeCuisines.join(', ') || 'none'}. User nationality/country: ${safeCountry}. ${ramadanHint} Avoid repeating last week meals. Last week plan: ${JSON.stringify(safePreviousPlan).slice(0, 1800)} Week starts: ${weekStart}`;
 
     try {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -113,16 +209,17 @@ export class WeeklyPlanService {
       const jsonEnd = content.lastIndexOf('}');
       if (jsonStart === -1 || jsonEnd === -1) return fallback;
       const parsed = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
-      if (!Array.isArray(parsed?.days) || !parsed.days.length) return fallback;
-      return parsed;
+
+      const normalizedDays = this.sanitizePlanDays(parsed?.days, targetCalories);
+      return { days: normalizedDays };
     } catch {
       return fallback;
     }
   }
 
   private fallbackPlan(weekStart: string, user: any) {
-    const cuisines = user?.cuisines?.length ? user.cuisines : ['Mediterranean', 'Middle Eastern'];
-    const target = Number(user?.dailyCaloriesTarget || 2000);
+    const cuisines = user?.cuisines?.length ? this.sanitizeList(user.cuisines, 8, 30) : ['Mediterranean', 'Middle Eastern'];
+    const target = Number(this.clampNumber(user?.dailyCaloriesTarget, 1200, 5000, 2000));
     const dates = Array.from({ length: 7 }).map((_, i) => {
       const d = new Date(weekStart);
       d.setDate(d.getDate() + i);

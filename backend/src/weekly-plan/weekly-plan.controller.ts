@@ -10,16 +10,16 @@ export class WeeklyPlanController {
 
   @Get('current')
   getCurrent(@CurrentUser() user: AppUser) {
-    return this.weeklyPlanService.getCurrentUserPlan(String(user._id));
+    return this.weeklyPlanService.getCurrentUserPlan(user._id);
   }
 
   @Post('regenerate')
   regenerate(@CurrentUser() user: AppUser) {
-    return this.weeklyPlanService.generatePlanForUser(String(user._id), false);
+    return this.weeklyPlanService.generatePlanForUser(user._id, false);
   }
 
   @Put('current')
-  updateCurrent(@CurrentUser() user: AppUser, @Body() body: { days: any[] }) {
-    return this.weeklyPlanService.updateCurrentUserPlan(String(user._id), body);
+  updateCurrent(@CurrentUser() user: AppUser, @Body() body: { days: unknown[] }) {
+    return this.weeklyPlanService.updateCurrentUserPlan(user._id, body);
   }
 }

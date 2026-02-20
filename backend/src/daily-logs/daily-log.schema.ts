@@ -5,6 +5,9 @@ export type DailyLogDocument = HydratedDocument<DailyLog>;
 
 @Schema({ _id: false })
 class DailyLogItem {
+  @Prop({ required: true })
+  id: string;
+
   @Prop({ required: true, enum: ['consumed', 'burned', 'balance'] })
   type: 'consumed' | 'burned' | 'balance';
 
