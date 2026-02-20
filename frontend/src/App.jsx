@@ -251,7 +251,9 @@ function ProfilePage({ t, profile, reloadProfile }) {
   const [zoom, setZoom] = useState(1)
   const [dragging, setDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [photoError, setPhotoError] = useState('')
   const photoInputRef = useRef(null)
+  const cropStageRef = useRef(null)
 
   useEffect(() => {
     if (!profile) return
@@ -298,6 +300,15 @@ function ProfilePage({ t, profile, reloadProfile }) {
 
   const beginCropFromFile = (file) => {
     if (!file) return
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
+    const maxBytes = 8 * 1024 * 1024
+
+    if (!allowedTypes.has(file.type) || file.size > maxBytes) {
+      setPhotoError('Use JPG/PNG/WEBP image under 8MB.')
+      return
+    }
+
+    setPhotoError('')
     const reader = new FileReader()
     reader.onload = () => {
       setCropImage(String(reader.result || ''))
@@ -317,23 +328,28 @@ function ProfilePage({ t, profile, reloadProfile }) {
       el.src = cropImage
     })
 
+    const stageRect = cropStageRef.current?.getBoundingClientRect()
+    const stageSize = Math.max(1, Math.min(stageRect?.width || 320, stageRect?.height || 320))
+
     const size = 320
     const canvas = document.createElement('canvas')
     canvas.width = size
     canvas.height = size
     const ctx = canvas.getContext('2d')
 
-    const cover = Math.max(size / img.width, size / img.height)
-    const baseW = img.width * cover
-    const baseH = img.height * cover
+    const cover = Math.max(stageSize / img.width, stageSize / img.height)
+    const displayW = img.width * cover
+    const displayH = img.height * cover
+    const outScale = size / stageSize
 
     ctx.save()
+    ctx.scale(outScale, outScale)
     ctx.beginPath()
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+    ctx.arc(stageSize / 2, stageSize / 2, stageSize / 2, 0, Math.PI * 2)
     ctx.clip()
-    ctx.translate(size / 2 + cropPos.x, size / 2 + cropPos.y)
+    ctx.translate(stageSize / 2 + cropPos.x, stageSize / 2 + cropPos.y)
     ctx.scale(zoom, zoom)
-    ctx.drawImage(img, -baseW / 2, -baseH / 2, baseW, baseH)
+    ctx.drawImage(img, -displayW / 2, -displayH / 2, displayW, displayH)
     ctx.restore()
 
     setForm((p) => ({ ...p, photoUrl: canvas.toDataURL('image/jpeg', 0.92) }))
@@ -408,18 +424,33 @@ function ProfilePage({ t, profile, reloadProfile }) {
         </div>
       )}
 
-      <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => beginCropFromFile(e.target.files?.[0])} />
+      <input ref={photoInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} onChange={(e) => beginCropFromFile(e.target.files?.[0])} />
+      {photoError && <p className="error-text">{photoError}</p>}
 
       {showCropper && (
         <div className="photo-preview-overlay" onClick={() => setShowCropper(false)}>
           <div className="photo-preview-card" onClick={(e) => e.stopPropagation()}>
             <h4>Adjust profile photo</h4>
             <div
+              ref={cropStageRef}
               className="crop-stage"
-              onPointerDown={(e) => { setDragging(true); setDragStart({ x: e.clientX - cropPos.x, y: e.clientY - cropPos.y }) }}
-              onPointerMove={(e) => { if (!dragging) return; setCropPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }) }}
-              onPointerUp={() => setDragging(false)}
-              onPointerLeave={() => setDragging(false)}
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId)
+                setDragging(true)
+                setDragStart({ x: e.clientX - cropPos.x, y: e.clientY - cropPos.y })
+              }}
+              onPointerMove={(e) => {
+                if (!dragging) return
+                setCropPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
+              }}
+              onPointerUp={(e) => {
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+                setDragging(false)
+              }}
+              onPointerCancel={(e) => {
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+                setDragging(false)
+              }}
             >
               <img src={cropImage} alt="crop" className="crop-image" style={{ transform: `translate(calc(-50% + ${cropPos.x}px), calc(-50% + ${cropPos.y}px)) scale(${zoom})` }} />
               <div className="crop-circle" />
@@ -539,9 +570,11 @@ function DailyLogPage({ t, profile }) {
   const [showAddConfirm, setShowAddConfirm] = useState(false)
   const [draft, setDraft] = useState({ type: 'consumed', label: '', value: 0 })
 
+  const makeItemId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+
   const loadDate = useCallback(async (selectedDate) => {
     const row = await apiGet(`/api/daily-logs/by-date?date=${encodeURIComponent(selectedDate)}`)
-    setItems(row.items || [])
+    setItems((row.items || []).map((it) => ({ ...it, id: it.id || makeItemId() })))
   }, [])
 
   const loadRecent = useCallback(async () => {
@@ -549,10 +582,10 @@ function DailyLogPage({ t, profile }) {
     setRecent(rows || [])
   }, [])
 
-  const persistItems = useCallback(async (nextItems) => {
-    await apiPut('/api/daily-logs/by-date', { date, items: nextItems })
+  const persistItems = useCallback(async (selectedDate, nextItems) => {
+    await apiPut('/api/daily-logs/by-date', { date: selectedDate, items: nextItems })
     await loadRecent()
-  }, [date, loadRecent])
+  }, [loadRecent])
 
   useEffect(() => { loadDate(date).catch(() => {}) }, [date, loadDate])
   useEffect(() => { loadRecent().catch(() => {}) }, [loadRecent])
@@ -563,17 +596,24 @@ function DailyLogPage({ t, profile }) {
   }
 
   const confirmAddItem = async () => {
-    const nextItems = [...items, { ...draft, value: Number(draft.value || 0) }]
-    setItems(nextItems)
+    const selectedDate = date
+    const newItem = { id: makeItemId(), ...draft, value: Number(draft.value || 0) }
+    setItems((prev) => {
+      const nextItems = [...prev, newItem]
+      void persistItems(selectedDate, nextItems)
+      return nextItems
+    })
     setDraft({ type: 'consumed', label: '', value: 0 })
     setShowAddConfirm(false)
-    await persistItems(nextItems)
   }
 
-  const removeItem = async (idx) => {
-    const nextItems = items.filter((_, i) => i !== idx)
-    setItems(nextItems)
-    await persistItems(nextItems)
+  const removeItem = async (itemId) => {
+    const selectedDate = date
+    setItems((prev) => {
+      const nextItems = prev.filter((it) => it.id !== itemId)
+      void persistItems(selectedDate, nextItems)
+      return nextItems
+    })
   }
 
   const caloriesConsumed = items.filter((x) => x.type === 'consumed').reduce((s, x) => s + Number(x.value || 0), 0)
@@ -606,14 +646,14 @@ function DailyLogPage({ t, profile }) {
       <button className="modern-save-btn" onClick={askAddItem}>Add item</button>
 
       <ul className="daily-log-cards">
-        {items.map((it, idx) => (
-          <li key={`${it.type}-${idx}`} className={`daily-log-card ${it.type}`}>
+        {items.map((it) => (
+          <li key={it.id} className={`daily-log-card ${it.type}`}>
             <div className="daily-log-card-top">
               <strong className="pill">{it.type}</strong>
               <strong>{Number(it.value || 0)}</strong>
             </div>
             <div className="daily-log-card-label">{it.label}</div>
-            <button className="ghost-btn" onClick={() => removeItem(idx)}>Remove</button>
+            <button className="ghost-btn" onClick={() => removeItem(it.id)}>Remove</button>
           </li>
         ))}
       </ul>
@@ -687,6 +727,8 @@ function HelpAiWidget({ t, email }) {
       setMessages(chat.messages || [])
       setFreshSession(false)
       setText('')
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I could not send right now. Please try again.' }])
     } finally {
       setSending(false)
     }

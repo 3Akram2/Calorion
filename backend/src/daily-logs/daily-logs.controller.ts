@@ -10,19 +10,19 @@ export class DailyLogsController {
 
   @Get('by-date')
   getByDate(@CurrentUser() user: AppUser, @Query('date') date: string) {
-    return this.service.getByDate(String(user._id), date);
+    return this.service.getByDate(user._id, date);
   }
 
   @Put('by-date')
   upsertByDate(
     @CurrentUser() user: AppUser,
-    @Body() body: { date: string; items?: Array<{ type: 'consumed' | 'burned' | 'balance'; label: string; value: number }> },
+    @Body() body: { date: string; items?: unknown[] },
   ) {
-    return this.service.upsertByDate(String(user._id), body);
+    return this.service.upsertByDate(user._id, body);
   }
 
   @Get('recent')
   listRecent(@CurrentUser() user: AppUser) {
-    return this.service.listRecent(String(user._id));
+    return this.service.listRecent(user._id);
   }
 }

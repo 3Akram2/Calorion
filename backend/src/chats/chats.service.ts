@@ -50,6 +50,14 @@ export class ChatsService {
     return chat;
   }
 
+  private sanitizeText(value: unknown, maxLen = 200) {
+    return String(value || '')
+      .replace(/[\u0000-\u001F\u007F]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, maxLen);
+  }
+
   private async generateAssistantReply(
     userMessage: string,
     history: Array<{ role: 'user' | 'assistant'; content: string; createdAt?: Date }>,
@@ -64,23 +72,31 @@ export class ChatsService {
   ): Promise<string> {
     const apiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY;
 
+    const safeGoal = this.sanitizeText(profile?.goal || 'small-loss', 20);
+    const safeCountry = this.sanitizeText(profile?.country || 'N/A', 40);
+    const safeCuisines = Array.isArray(profile?.cuisines)
+      ? profile.cuisines.map((c) => this.sanitizeText(c, 24)).filter(Boolean).slice(0, 8)
+      : [];
+
     const profileContext = [
-      `Goal: ${profile?.goal || 'small-loss'}`,
-      `Current weight: ${profile?.currentWeightKg || 0} kg`,
-      `Target weight: ${profile?.targetWeightKg || 0} kg`,
-      `Daily calories target: ${profile?.dailyCaloriesTarget || 0} kcal`,
-      `Country: ${profile?.country || 'N/A'}`,
-      `Preferred cuisines: ${(profile?.cuisines || []).join(', ') || 'N/A'}`,
+      `Goal: ${safeGoal}`,
+      `Current weight: ${Number(profile?.currentWeightKg || 0)} kg`,
+      `Target weight: ${Number(profile?.targetWeightKg || 0)} kg`,
+      `Daily calories target: ${Number(profile?.dailyCaloriesTarget || 0)} kcal`,
+      `Country: ${safeCountry}`,
+      `Preferred cuisines: ${safeCuisines.join(', ') || 'N/A'}`,
     ].join('\n');
 
+    const safeUserMessage = this.sanitizeText(userMessage, 700);
+
     if (!apiKey) {
-      return `I can coach you with your plan right now, but AI provider key is missing on server.\n\nBased on your profile:\n${profileContext}\n\nYou said: "${userMessage}"\n\nAction: keep today's intake near your daily target and reduce dinner carbs if you already exceeded calories.`;
+      return `I can coach you with your plan right now, but AI provider key is missing on server.\n\nBased on your profile:\n${profileContext}\n\nYou said: "${safeUserMessage}"\n\nAction: keep today's intake near your daily target and reduce dinner carbs if you already exceeded calories.`;
     }
 
     const normalizedHistory = (history || [])
       .filter((m) => m && typeof m.content === 'string')
       .slice(-12)
-      .map((m) => ({ role: m.role, content: m.content }));
+      .map((m) => ({ role: m.role, content: this.sanitizeText(m.content, 500) }));
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -103,7 +119,7 @@ export class ChatsService {
             content: `User profile:\n${profileContext}`,
           },
           ...normalizedHistory,
-          { role: 'user', content: userMessage },
+          { role: 'user', content: safeUserMessage },
         ],
       }),
     });
