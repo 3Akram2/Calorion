@@ -537,7 +537,10 @@ function WeeklyPlanPage({ t, profile, lang }) {
   if (!plan) return <section className="card">{t.loading}</section>
   return (
     <section className="card weekly-plan-page">
-      <h2 className="weekly-plan-title">{t.weeklyPlan}</h2>
+      <div className="weekly-plan-head-row">
+        <h2 className="weekly-plan-title">{t.weeklyPlan}</h2>
+        <span className={`ai-chip ${plan?.generatedBy === 'ai' ? 'on' : 'off'}`}>{plan?.generatedBy === 'ai' ? t.aiChipOn : t.aiChipOff}</span>
+      </div>
       {profile?.ramadanMode ? <p>{t.weeklyRamadanActive}</p> : <p>{t.weeklyNormalActive}</p>}
       <div className="profile-actions-row weekly-actions-row">
         {!editing ? <button onClick={() => setEditing(true)}>{t.editPlan}</button> : <button className="primary-btn" onClick={savePlan}>{t.savePlan}</button>}

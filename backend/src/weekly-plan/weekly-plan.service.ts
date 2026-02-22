@@ -146,12 +146,15 @@ export class WeeklyPlanService {
     if (existing && !fillCurrentWeekOnly) return existing;
 
     const previousPlan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart: lastWeek }).lean();
-    const generated = await this.generateWithAi({ user, weekStart, previousPlan });
+    let generated = await this.generateWithAi({ user, weekStart, previousPlan });
+    if (generated.source !== 'ai') {
+      generated = await this.generateWithAi({ user, weekStart, previousPlan, retryStrict: true });
+    }
 
     const days = generated.days || [];
     return this.weeklyPlanModel.findOneAndUpdate(
       { userId: userObjectId, weekStart },
-      { userId: userObjectId, weekStart, days, generatedBy: 'ai' },
+      { userId: userObjectId, weekStart, days, generatedBy: generated.source === 'ai' ? 'ai' : 'fallback' },
       { upsert: true, new: true },
     );
   }
@@ -280,11 +283,11 @@ export class WeeklyPlanService {
     return { ...plan, days };
   }
 
-  private async generateWithAi(params: { user: any; weekStart: string; previousPlan: any }) {
-    const { user, weekStart, previousPlan } = params;
+  private async generateWithAi(params: { user: any; weekStart: string; previousPlan: any; retryStrict?: boolean }) {
+    const { user, weekStart, previousPlan, retryStrict } = params;
     const apiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY;
     const fallback = this.fallbackPlan(weekStart, user);
-    if (!apiKey) return fallback;
+    if (!apiKey) return { days: fallback.days, source: 'fallback' as const };
 
     const safeCountry = this.sanitizeText(user?.country, 40) || 'unknown';
     const safeCuisines = this.sanitizeList(user?.cuisines, 8, 30);
@@ -295,7 +298,7 @@ export class WeeklyPlanService {
       ? 'Ramadan mode ON: include 3 meal windows (iftar after Maghrib + ~30 min, light sweet snack between meals, suhoor before Fajr). Add hydration guidance and keep foods culturally familiar.'
       : '';
 
-    const prompt = `Generate a 7-day food plan as STRICT JSON with shape {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"breakfast|lunch|dinner|snack","name":"...","cuisine":"...","weightGrams":number,"calories":number}],"totalCalories":number}]}. VERY IMPORTANT: each meal must include REAL FOODS, not generic labels like 'Mediterranean meal'. In meal.name, include concrete components with line breaks, e.g. '100g grilled chicken\n150g rice\n150g salad'. Target calories/day around ${targetCalories}. User preferred cuisines: ${safeCuisines.join(', ') || 'none'}. User nationality/country: ${safeCountry}. ${ramadanHint} Avoid repeating last week meals. Last week plan: ${JSON.stringify(safePreviousPlan).slice(0, 1800)} Week starts: ${weekStart}`;
+    const prompt = `Generate a 7-day food plan as STRICT JSON with shape {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"breakfast|lunch|dinner|snack","name":"...","cuisine":"...","weightGrams":number,"calories":number}],"totalCalories":number}]}. VERY IMPORTANT: each meal must include REAL FOODS, not generic labels like 'Mediterranean meal'. In meal.name, include concrete components with line breaks, e.g. '100g grilled chicken\n150g rice\n150g salad'. Target calories/day around ${targetCalories}. User preferred cuisines: ${safeCuisines.join(', ') || 'none'}. User nationality/country: ${safeCountry}. ${ramadanHint} ${retryStrict ? 'STRICT ANTI-REPETITION: meals must vary across all 7 days and breakfast cannot repeat more than twice.' : ''} Avoid repeating last week meals. Last week plan: ${JSON.stringify(safePreviousPlan).slice(0, 1800)} Week starts: ${weekStart}`;
 
     try {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -315,13 +318,13 @@ export class WeeklyPlanService {
       const content = String(payload?.choices?.[0]?.message?.content || '').trim();
       const jsonStart = content.indexOf('{');
       const jsonEnd = content.lastIndexOf('}');
-      if (jsonStart === -1 || jsonEnd === -1) return fallback;
+      if (jsonStart === -1 || jsonEnd === -1) return { days: fallback.days, source: 'fallback' as const };
       const parsed = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
 
       const normalizedDays = this.sanitizePlanDays(parsed?.days, targetCalories);
-      return { days: normalizedDays };
+      return { days: normalizedDays, source: 'ai' as const };
     } catch {
-      return fallback;
+      return { days: fallback.days, source: 'fallback' as const };
     }
   }
 
