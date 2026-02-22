@@ -254,12 +254,14 @@ input, select {
   margin: 0;
   line-height: 1.65;
   opacity: .96;
+  font-style: italic;
 }
 .meal-read-meta {
   margin: 8px 0 0;
   font-size: 13px;
   opacity: .86;
   font-weight: 600;
+  font-style: italic;
 }
 .weekly-day-head {
   display: flex;

@@ -502,6 +502,10 @@ function WeeklyPlanPage({ t, profile, lang }) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
   }
 
+  const toTitleCase = (value) => String(value || '')
+    .toLowerCase()
+    .replace(/\b\p{L}/gu, (ch) => ch.toUpperCase())
+
   const load = useCallback(async () => {
     const data = await apiGet(`/api/weekly-plan/current?lang=${encodeURIComponent(lang || 'en')}`)
     setPlan(data)
@@ -561,8 +565,8 @@ function WeeklyPlanPage({ t, profile, lang }) {
                   ) : (
                     <article className="meal-read-card">
                       <h4 className="meal-read-title">{toLabel(m.mealType)}</h4>
-                      <p className="meal-read-foods">{String(m.name || '').split('\n').map((line, idx) => <span key={idx}>{line}<br /></span>)}</p>
-                      <p className="meal-read-meta">{m.weightGrams} g · {m.calories} kcal</p>
+                      <p className="meal-read-foods">{String(m.name || '').split('\n').map((line, idx) => <span key={idx}>{toTitleCase(line)}<br /></span>)}</p>
+                      <p className="meal-read-meta">({m.weightGrams} g) · ({m.calories} kcal)</p>
                     </article>
                   )}
                 </div>
