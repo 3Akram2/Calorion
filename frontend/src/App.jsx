@@ -493,6 +493,11 @@ function WeeklyPlanPage({ t, profile }) {
   const [plan, setPlan] = useState(null)
   const [editing, setEditing] = useState(false)
 
+  const toLabel = (value) => {
+    const s = String(value || '').trim().toLowerCase()
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
+  }
+
   const load = useCallback(async () => {
     const data = await apiGet('/api/weekly-plan/current')
     setPlan(data)
@@ -541,7 +546,7 @@ function WeeklyPlanPage({ t, profile }) {
                 <div key={i} className="meal-line">
                   {editing ? (
                     <div className="grid two">
-                      <label>Meal type<input value={m.mealType || ''} onChange={(e) => updateMealField(dayIdx, i, 'mealType', e.target.value)} /></label>
+                      <label>Meal type<input value={m.mealType || ''} onChange={(e) => updateMealField(dayIdx, i, 'mealType', String(e.target.value || '').toLowerCase())} /></label>
                       <label>Calories<input type="number" value={m.calories || 0} onChange={(e) => updateMealField(dayIdx, i, 'calories', e.target.value)} /></label>
                       <label>Weight (g)<input type="number" value={m.weightGrams || 0} onChange={(e) => updateMealField(dayIdx, i, 'weightGrams', e.target.value)} /></label>
                       <label>Cuisine<input value={m.cuisine || ''} onChange={(e) => updateMealField(dayIdx, i, 'cuisine', e.target.value)} /></label>
@@ -550,7 +555,7 @@ function WeeklyPlanPage({ t, profile }) {
                       </label>
                     </div>
                   ) : (
-                    renderRichText(`**${m.mealType}**\n${m.name}\n${m.weightGrams} g (${m.calories} kcal)`)
+                    renderRichText(`**${toLabel(m.mealType)}**\n${m.name}\n${m.weightGrams} g (${m.calories} kcal)`)
                   )}
                 </div>
               ))}
