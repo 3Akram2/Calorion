@@ -538,9 +538,9 @@ function WeeklyPlanPage({ t, profile, lang }) {
   return (
     <section className="card weekly-plan-page">
       <h2 className="weekly-plan-title">{t.weeklyPlan}</h2>
-      {profile?.ramadanMode ? <p>Ramadan-style meals are applied because Ramadan mode is ON.</p> : <p>Normal meal style is active (eggs/chicken/rice etc.).</p>}
+      {profile?.ramadanMode ? <p>{t.weeklyRamadanActive}</p> : <p>{t.weeklyNormalActive}</p>}
       <div className="profile-actions-row weekly-actions-row">
-        {!editing ? <button onClick={() => setEditing(true)}>Edit plan</button> : <button className="primary-btn" onClick={savePlan}>Save plan</button>}
+        {!editing ? <button onClick={() => setEditing(true)}>{t.editPlan}</button> : <button className="primary-btn" onClick={savePlan}>{t.savePlan}</button>}
       </div>
       <ul className="list weekly-plan-list weekly-plan-luxe-list">
         {(plan.days || []).map((d, dayIdx) => (

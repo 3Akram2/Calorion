@@ -91,5 +91,9 @@
   "calorieCut": "العجز اليومي",
   "todayTips": "نصائح اليوم",
   "saveProfile": "حفظ الملف",
-  "regeneratePlan": "إعادة توليد خطة الأسبوع"
+  "regeneratePlan": "إعادة توليد خطة الأسبوع",
+  "editPlan": "تعديل الخطة",
+  "savePlan": "حفظ الخطة",
+  "weeklyRamadanActive": "يتم تطبيق وجبات رمضان لأن وضع رمضان مُفعّل.",
+  "weeklyNormalActive": "نمط الوجبات العادي مُفعّل (بيض/دجاج/أرز... إلخ)."
 }

@@ -91,5 +91,9 @@
   "calorieCut": "Calorie cut",
   "todayTips": "Today tips",
   "saveProfile": "Save profile",
-  "regeneratePlan": "Regenerate weekly plan"
+  "regeneratePlan": "Regenerate weekly plan",
+  "editPlan": "Edit plan",
+  "savePlan": "Save plan",
+  "weeklyRamadanActive": "Ramadan-style meals are applied because Ramadan mode is ON.",
+  "weeklyNormalActive": "Normal meal style is active (eggs/chicken/rice etc.)."
 }
