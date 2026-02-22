@@ -211,11 +211,11 @@ function OnboardingWizard({ t, onDone, email }) {
 
 function DashboardPage({ t, profile, ramadanTimings, tips }) {
   return (
-    <section className="card home-page">
+    <section className="card home-page luxe-home">
       <h1>{t.dashboard}</h1>
       <p className="home-subtitle">{t.subtitle}</p>
 
-      <div className="metrics-grid">
+      <div className="metrics-grid home-metrics-grid">
         <div className="metric"><span>{t.dailyTarget}</span><strong>{profile?.dailyCaloriesTarget || 0} kcal</strong></div>
         <div className="metric"><span>{t.maintenanceCalories}</span><strong>{profile?.maintenanceCalories || 0} kcal</strong></div>
         <div className="metric"><span>{t.calorieCut}</span><strong>{profile?.calorieDeficit || 0} kcal</strong></div>
@@ -225,7 +225,7 @@ function DashboardPage({ t, profile, ramadanTimings, tips }) {
         <p>{t.fajr}: <strong>{ramadanTimings.fajr}</strong> · {t.maghrib}: <strong>{ramadanTimings.maghrib}</strong></p>
       )}
 
-      <h3>{t.todayTips}</h3>
+      <h3 className="tips-title">{t.todayTips}</h3>
       <div className="tips-grid">
         {(tips || []).map((tip, idx) => (
           <article key={tip._id} className="tip-card">
@@ -358,7 +358,7 @@ function ProfilePage({ t, profile, reloadProfile }) {
 
   if (!profile || !form) return <section className="card">{t.loading}</section>
   return (
-    <section className="card profile-card">
+    <section className="card profile-card luxe-profile">
       <div className="profile-title-row">
         <h2>{t.profile}</h2>
         <button className={`icon-pencil ${editing ? 'cancel' : ''}`} onClick={() => (editing ? cancelEdit() : setEditing(true))} title={editing ? 'Cancel edit' : 'Edit profile'}>{editing ? '✕' : '✎'}</button>
@@ -523,13 +523,13 @@ function WeeklyPlanPage({ t, profile }) {
 
   if (!plan) return <section className="card">{t.loading}</section>
   return (
-    <section className="card">
-      <h2>{t.weeklyPlan}</h2>
+    <section className="card weekly-plan-page">
+      <h2 className="weekly-plan-title">{t.weeklyPlan}</h2>
       {profile?.ramadanMode ? <p>Ramadan-style meals are applied because Ramadan mode is ON.</p> : <p>Normal meal style is active (eggs/chicken/rice etc.).</p>}
-      <div className="profile-actions-row">
+      <div className="profile-actions-row weekly-actions-row">
         {!editing ? <button onClick={() => setEditing(true)}>Edit plan</button> : <button className="primary-btn" onClick={savePlan}>Save plan</button>}
       </div>
-      <ul className="list weekly-plan-list">
+      <ul className="list weekly-plan-list weekly-plan-luxe-list">
         {(plan.days || []).map((d, dayIdx) => (
           <li key={d.date} className="weekly-day-item">
             <div className="weekly-day-head">
