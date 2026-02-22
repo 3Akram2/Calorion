@@ -538,6 +538,56 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
 }
 .auth-note { color: #8ea2c8; font-size: 13px; text-align: center; margin-top: 10px; }
 
+/* Light mode tuning for premium sections */
+.app:not(.dark) .luxe-home {
+  border-color: rgba(79, 70, 229, .18);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(56, 189, 248, .22), transparent 54%),
+    radial-gradient(120% 120% at 100% 0%, rgba(167, 139, 250, .20), transparent 52%),
+    linear-gradient(160deg, #ffffff, #f2f6ff);
+}
+.app:not(.dark) .home-metrics-grid .metric {
+  background: rgba(255,255,255,.85);
+  border-color: rgba(99,102,241,.2);
+}
+.app:not(.dark) .weekly-plan-page {
+  border-color: rgba(99,102,241,.2);
+  background:
+    radial-gradient(130% 140% at 0% 0%, rgba(129, 140, 248, .18), transparent 58%),
+    radial-gradient(130% 140% at 100% 100%, rgba(45, 212, 191, .16), transparent 56%),
+    linear-gradient(160deg, #ffffff, #f5f8ff);
+}
+.app:not(.dark) .weekly-plan-luxe-list .weekly-day-item {
+  background: rgba(255,255,255,.82);
+  border-color: rgba(100,116,139,.22);
+}
+.app:not(.dark) .luxe-profile {
+  border-color: rgba(20,184,166,.2);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(20,184,166,.18), transparent 52%),
+    radial-gradient(120% 120% at 100% 100%, rgba(99,102,241,.16), transparent 56%),
+    linear-gradient(160deg, #ffffff, #f4f8ff);
+}
+.app:not(.dark) .luxe-profile .profile-metrics-stack > div {
+  background: rgba(255,255,255,.86);
+  border-color: rgba(100,116,139,.22);
+}
+.app:not(.dark) .daily-log-page {
+  border-color: rgba(14,165,233,.2);
+  background:
+    radial-gradient(130% 120% at 0% 0%, rgba(56,189,248,.2), transparent 56%),
+    radial-gradient(120% 120% at 100% 100%, rgba(99,102,241,.18), transparent 58%),
+    linear-gradient(160deg, #ffffff, #f3f8ff);
+}
+.app:not(.dark) .daily-log-editor,
+.app:not(.dark) .daily-log-metrics p,
+.app:not(.dark) .daily-log-card,
+.app:not(.dark) .weekly-plan-page .meal-line {
+  background: rgba(255,255,255,.85);
+  border-color: rgba(100,116,139,.22);
+  color: #0f172a;
+}
+
 @media (min-width: 960px) {
   .topbar { display: none; }
   .sidebar {
