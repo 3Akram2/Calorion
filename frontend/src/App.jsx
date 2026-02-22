@@ -200,7 +200,7 @@ function OnboardingWizard({ t, onDone, email }) {
           <h2>{t.activity}</h2>
           <label>{t.activityLevel}<select value={form.activityLevel} onChange={(e) => update('activityLevel', e.target.value)}><option value="low">{t.low}</option><option value="moderate">{t.moderate}</option><option value="high">{t.high}</option></select></label>
           <label><input type="checkbox" checked={form.ramadanMode} onChange={(e) => update('ramadanMode', e.target.checked)} /> {t.ramadanMode}</label>
-          {form.ramadanMode && <div className="grid two"><label>{t.city}<input value={form.ramadanCity} onChange={(e) => update('ramadanCity', e.target.value)} /></label><label>{t.country}<input value={form.ramadanCountry} onChange={(e) => update('ramadanCountry', e.target.value)} /></label></div>}
+          {form.ramadanMode && <div className="grid two daily-log-editor"><label>{t.city}<input value={form.ramadanCity} onChange={(e) => update('ramadanCity', e.target.value)} /></label><label>{t.country}<input value={form.ramadanCountry} onChange={(e) => update('ramadanCountry', e.target.value)} /></label></div>}
           <p>{t.readyToStart}</p>
         </>
       )}
@@ -624,8 +624,8 @@ function DailyLogPage({ t, profile }) {
   const overUnder = net - limit
 
   return (
-    <section className="card">
-      <h2>{t.dailyLog}</h2>
+    <section className="card daily-log-page">
+      <h2 className="daily-log-title">{t.dailyLog}</h2>
       <label>Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
 
       <div className="grid two">
@@ -643,7 +643,7 @@ function DailyLogPage({ t, profile }) {
           <input value={draft.label} onChange={(e) => setDraft((p) => ({ ...p, label: e.target.value }))} placeholder="e.g. chicken sandwich / walking / body weight" />
         </label>
       </div>
-      <button className="modern-save-btn" onClick={askAddItem}>Add item</button>
+      <button className="add-item-btn" onClick={askAddItem}>Add item</button>
 
       <ul className="daily-log-cards">
         {items.map((it) => (
@@ -658,10 +658,12 @@ function DailyLogPage({ t, profile }) {
         ))}
       </ul>
 
-      <p><strong>{t.dailyLimit}:</strong> {limit} kcal</p>
-      <p><strong>{t.netCalories}:</strong> {net} kcal</p>
-      <p><strong>{t.overUnder}:</strong> {overUnder > 0 ? `+${overUnder}` : overUnder} kcal</p>
-      <p><strong>Balance:</strong> {balance}</p>
+      <div className="daily-log-metrics">
+        <p><strong>{t.dailyLimit}:</strong> {limit} kcal</p>
+        <p><strong>{t.netCalories}:</strong> {net} kcal</p>
+        <p><strong>{t.overUnder}:</strong> {overUnder > 0 ? `+${overUnder}` : overUnder} kcal</p>
+        <p><strong>Balance:</strong> {balance}</p>
+      </div>
 
       <h3>Recent logs</h3>
       <ul className="list">
