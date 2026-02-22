@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Query } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { WeeklyPlanService } from './weekly-plan.service';
 
@@ -9,8 +9,8 @@ export class WeeklyPlanController {
   constructor(private readonly weeklyPlanService: WeeklyPlanService) {}
 
   @Get('current')
-  getCurrent(@CurrentUser() user: AppUser) {
-    return this.weeklyPlanService.getCurrentUserPlan(user._id);
+  getCurrent(@CurrentUser() user: AppUser, @Query('lang') lang?: string) {
+    return this.weeklyPlanService.getCurrentUserPlan(user._id, lang);
   }
 
   @Post('regenerate')

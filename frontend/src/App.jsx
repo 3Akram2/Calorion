@@ -489,19 +489,23 @@ function ProfilePage({ t, profile, reloadProfile }) {
   )
 }
 
-function WeeklyPlanPage({ t, profile }) {
+function WeeklyPlanPage({ t, profile, lang }) {
   const [plan, setPlan] = useState(null)
   const [editing, setEditing] = useState(false)
 
   const toLabel = (value) => {
     const s = String(value || '').trim().toLowerCase()
+    if (s === 'breakfast') return t.breakfast
+    if (s === 'lunch') return t.lunch
+    if (s === 'dinner') return t.dinner
+    if (s === 'snack') return t.snack
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
   }
 
   const load = useCallback(async () => {
-    const data = await apiGet('/api/weekly-plan/current')
+    const data = await apiGet(`/api/weekly-plan/current?lang=${encodeURIComponent(lang || 'en')}`)
     setPlan(data)
-  }, [])
+  }, [lang])
 
   useEffect(() => { load().catch(() => {}) }, [load])
 
@@ -819,7 +823,7 @@ function App() {
   }, [email])
 
   useEffect(() => { loadProfile() }, [loadProfile])
-  useEffect(() => { apiGet('/api/tips/today').then(setTips).catch(() => setTips([])) }, [])
+  useEffect(() => { apiGet(`/api/tips/today?lang=${encodeURIComponent(lang)}`).then(setTips).catch(() => setTips([])) }, [lang])
   useEffect(() => { if (appUser && onboardingDone !== 'true') navigate('/onboarding') }, [onboardingDone, navigate, appUser])
 
   const finishOnboarding = async () => { setOnboardingDone('true'); await loadProfile(); navigate('/') }
@@ -838,7 +842,7 @@ function App() {
           <Route path="/" element={onboardingDone !== 'true' ? <Navigate to="/onboarding" /> : <DashboardPage t={t} profile={profile} ramadanTimings={ramadanTimings} tips={tips} />} />
           <Route path="/onboarding" element={<OnboardingWizard t={t} onDone={finishOnboarding} email={email} />} />
           <Route path="/profile" element={<ProfilePage t={t} profile={profile} reloadProfile={loadProfile} />} />
-          <Route path="/weekly-plan" element={<WeeklyPlanPage t={t} profile={profile} />} />
+          <Route path="/weekly-plan" element={<WeeklyPlanPage t={t} profile={profile} lang={lang} />} />
           <Route path="/daily-log" element={<DailyLogPage t={t} profile={profile} />} />
           <Route path="/reminders" element={<RemindersPage t={t} email={email} />} />
           <Route path="/auth" element={<Navigate to="/" />} />

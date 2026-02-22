@@ -111,7 +111,7 @@ export class WeeklyPlanService {
     }));
   }
 
-  async getCurrentUserPlan(userId: string) {
+  async getCurrentUserPlan(userId: string, lang = 'en') {
     const userObjectId = new Types.ObjectId(userId);
     const weekStart = this.getWeekStart();
 
@@ -124,7 +124,8 @@ export class WeeklyPlanService {
       plan = await this.generatePlanForUser(userId, true).catch(() => null);
     }
 
-    return plan;
+    if (!plan || String(lang).toLowerCase() !== 'ar') return plan;
+    return this.translatePlanForArabic(plan);
   }
 
   async generatePlanForUser(userId: string, fillCurrentWeekOnly = false) {
@@ -170,6 +171,54 @@ export class WeeklyPlanService {
       { userId: userObjectId, weekStart, days, generatedBy: 'user-edit' },
       { upsert: true, new: true },
     );
+  }
+
+  private async translatePlanForArabic(plan: any) {
+    const apiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY;
+    if (!apiKey) return plan;
+
+    const compact = {
+      days: (plan?.days || []).map((d: any) => ({
+        date: d.date,
+        totalCalories: d.totalCalories,
+        meals: (d.meals || []).map((m: any) => ({
+          mealType: m.mealType,
+          cuisine: m.cuisine,
+          weightGrams: m.weightGrams,
+          calories: m.calories,
+          name: m.name,
+        })),
+      })),
+    };
+
+    const prompt = `Translate ONLY cuisine and meal.name fields in this JSON to Arabic. Keep keys, dates, mealType values, calories, and weightGrams unchanged. Return JSON only with same shape: ${JSON.stringify(compact).slice(0, 6000)}`;
+
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0,
+          max_tokens: 2200,
+          messages: [
+            { role: 'system', content: 'You are a translator. Return valid JSON only.' },
+            { role: 'user', content: prompt },
+          ],
+        }),
+      });
+
+      const payload: any = await response.json();
+      const content = String(payload?.choices?.[0]?.message?.content || '').trim();
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1) return plan;
+      const parsed = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
+      const translatedDays = this.sanitizePlanDays(parsed?.days, 2000);
+      return { ...plan, days: translatedDays };
+    } catch {
+      return plan;
+    }
   }
 
   private async generateWithAi(params: { user: any; weekStart: string; previousPlan: any }) {
