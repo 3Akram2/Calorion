@@ -124,8 +124,14 @@ export class WeeklyPlanService {
       plan = await this.generatePlanForUser(userId, true).catch(() => null);
     }
 
-    if (!plan || String(lang).toLowerCase() !== 'ar') return plan;
-    return this.translatePlanForArabic(plan);
+    if (!plan) return plan;
+
+    if (String(lang).toLowerCase() === 'ar') {
+      const translated = await this.translatePlanForArabic(plan);
+      return this.applyFoodTermGlossary(translated, 'ar');
+    }
+
+    return this.applyFoodTermGlossary(plan, 'en');
   }
 
   async generatePlanForUser(userId: string, fillCurrentWeekOnly = false) {
@@ -219,6 +225,59 @@ export class WeeklyPlanService {
     } catch {
       return plan;
     }
+  }
+
+  private applyFoodTermGlossary(plan: any, lang: 'en' | 'ar') {
+    const mapEn: Array<[RegExp, string]> = [
+      [/\bfoul\b/gi, 'beans'],
+      [/\bful\b/gi, 'beans'],
+      [/فول/g, 'beans'],
+    ];
+
+    const mapAr: Array<[RegExp, string]> = [
+      [/\bbeans\b/gi, 'فول'],
+      [/\bfoul\b/gi, 'فول'],
+      [/\bgrilled chicken\b/gi, 'دجاج مشوي'],
+      [/\brice\b/gi, 'أرز'],
+      [/\bsalad\b/gi, 'سلطة'],
+      [/\bolive oil\b/gi, 'زيت زيتون'],
+      [/\bboiled eggs\b/gi, 'بيض مسلوق'],
+      [/\bwhole wheat bread\b/gi, 'خبز قمح كامل'],
+      [/\byogurt\b/gi, 'زبادي'],
+      [/\bdates\b/gi, 'تمر'],
+      [/\bwater\b/gi, 'ماء'],
+      [/\bfish\b/gi, 'سمك'],
+      [/\bpotatoes\b/gi, 'بطاطس'],
+      [/\bvegetables\b/gi, 'خضار'],
+      [/\boats\b/gi, 'شوفان'],
+      [/\bbanana\b/gi, 'موز'],
+      [/\bpeanut butter\b/gi, 'زبدة فول سوداني'],
+      [/\bapple\b/gi, 'تفاح'],
+      [/\bsmall\b/gi, 'صغير'],
+      [/\bpiece\b/gi, 'قطعة'],
+      [/\bwith nuts\b/gi, 'بالمكسرات'],
+      [/\bOR\b/g, 'أو'],
+      [/\bcups\b/gi, 'أكواب'],
+      [/\btsp\b/gi, 'ملعقة صغيرة'],
+      [/\bg\b/g, 'جم'],
+      [/\bkcal\b/gi, 'سعرة'],
+    ];
+
+    const replaceWith = lang === 'ar' ? mapAr : mapEn;
+    const days = (plan?.days || []).map((d: any) => ({
+      ...d,
+      meals: (d?.meals || []).map((m: any) => {
+        let name = String(m?.name || '');
+        let cuisine = String(m?.cuisine || '');
+        for (const [re, to] of replaceWith) {
+          name = name.replace(re, to);
+          cuisine = cuisine.replace(re, to);
+        }
+        return { ...m, name, cuisine };
+      }),
+    }));
+
+    return { ...plan, days };
   }
 
   private async generateWithAi(params: { user: any; weekStart: string; previousPlan: any }) {
