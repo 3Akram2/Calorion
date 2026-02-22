@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { TipsService } from './tips.service';
 
 @Controller('tips')
@@ -6,7 +6,7 @@ export class TipsController {
   constructor(private readonly tipsService: TipsService) {}
 
   @Get('today')
-  today() {
-    return this.tipsService.getTodayTips();
+  today(@Query('lang') lang?: string) {
+    return this.tipsService.getTodayTips(lang);
   }
 }
