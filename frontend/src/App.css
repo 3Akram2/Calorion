@@ -239,6 +239,28 @@ input, select {
   margin-bottom: 10px;
   background: rgba(15,23,42,.28);
 }
+.meal-read-card {
+  border-radius: 12px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: rgba(15,23,42,.34);
+  padding: 10px 12px;
+}
+.meal-read-title {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.meal-read-foods {
+  margin: 0;
+  line-height: 1.65;
+  opacity: .96;
+}
+.meal-read-meta {
+  margin: 8px 0 0;
+  font-size: 13px;
+  opacity: .86;
+  font-weight: 600;
+}
 .weekly-day-head {
   display: flex;
   justify-content: space-between;
@@ -559,8 +581,22 @@ th, td { border-bottom: 1px solid rgba(127,127,127,.22); text-align: left; paddi
     linear-gradient(160deg, #ffffff, #f5f8ff);
 }
 .app:not(.dark) .weekly-plan-luxe-list .weekly-day-item {
-  background: rgba(255,255,255,.82);
-  border-color: rgba(100,116,139,.22);
+  background: linear-gradient(160deg, rgba(255,255,255,.96), rgba(248,250,255,.96));
+  border-color: rgba(71,85,105,.24);
+  box-shadow: 0 8px 20px rgba(15,23,42,.08);
+}
+.app:not(.dark) .meal-read-card {
+  background: rgba(255,255,255,.92);
+  border-color: rgba(71,85,105,.2);
+}
+.app:not(.dark) .meal-read-title {
+  color: #0f172a;
+}
+.app:not(.dark) .meal-read-foods {
+  color: #1e293b;
+}
+.app:not(.dark) .meal-read-meta {
+  color: #334155;
 }
 .app:not(.dark) .luxe-profile {
   border-color: rgba(20,184,166,.2);

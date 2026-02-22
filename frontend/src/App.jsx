@@ -555,7 +555,11 @@ function WeeklyPlanPage({ t, profile }) {
                       </label>
                     </div>
                   ) : (
-                    renderRichText(`**${toLabel(m.mealType)}**\n${m.name}\n${m.weightGrams} g (${m.calories} kcal)`)
+                    <article className="meal-read-card">
+                      <h4 className="meal-read-title">{toLabel(m.mealType)}</h4>
+                      <p className="meal-read-foods">{String(m.name || '').split('\n').map((line, idx) => <span key={idx}>{line}<br /></span>)}</p>
+                      <p className="meal-read-meta">{m.weightGrams} g · {m.calories} kcal</p>
+                    </article>
                   )}
                 </div>
               ))}
