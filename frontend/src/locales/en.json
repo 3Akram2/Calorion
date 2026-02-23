@@ -98,5 +98,6 @@
   "weeklyNormalActive": "Normal meal style is active (eggs/chicken/rice etc.).",
   "aiChipOn": "AI",
   "aiChipOff": "AI Off",
-  "testRegenerateAi": "Test regenerate AI"
+  "testRegenerateAi": "Test regenerate AI",
+  "regenerating": "Regenerating..."
 }

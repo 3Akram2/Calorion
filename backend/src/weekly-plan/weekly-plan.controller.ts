@@ -15,7 +15,7 @@ export class WeeklyPlanController {
 
   @Post('regenerate')
   regenerate(@CurrentUser() user: AppUser) {
-    return this.weeklyPlanService.generatePlanForUser(user._id, false);
+    return this.weeklyPlanService.generatePlanForUser(user._id, false, true);
   }
 
   @Put('current')
