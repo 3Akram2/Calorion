@@ -97,5 +97,6 @@
   "weeklyRamadanActive": "Ramadan-style meals are applied because Ramadan mode is ON.",
   "weeklyNormalActive": "Normal meal style is active (eggs/chicken/rice etc.).",
   "aiChipOn": "AI",
-  "aiChipOff": "AI Off"
+  "aiChipOff": "AI Off",
+  "testRegenerateAi": "Test regenerate AI"
 }

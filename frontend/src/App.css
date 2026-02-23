@@ -250,6 +250,10 @@ input, select {
 .weekly-actions-row button {
   border-radius: 12px;
 }
+.weekly-test-btn {
+  width: auto;
+  min-width: 150px;
+}
 .weekly-plan-list .weekly-day-item {
   display: block;
   border-bottom: 1px solid rgba(127,127,127,.25);
