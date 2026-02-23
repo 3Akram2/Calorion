@@ -534,6 +534,11 @@ function WeeklyPlanPage({ t, profile, lang }) {
     await load()
   }
 
+  const regenerateAiPlan = async () => {
+    await apiPost('/api/weekly-plan/regenerate')
+    await load()
+  }
+
   if (!plan) return <section className="card">{t.loading}</section>
   return (
     <section className="card weekly-plan-page">
@@ -544,6 +549,7 @@ function WeeklyPlanPage({ t, profile, lang }) {
       {profile?.ramadanMode ? <p>{t.weeklyRamadanActive}</p> : <p>{t.weeklyNormalActive}</p>}
       <div className="profile-actions-row weekly-actions-row">
         {!editing ? <button onClick={() => setEditing(true)}>{t.editPlan}</button> : <button className="primary-btn" onClick={savePlan}>{t.savePlan}</button>}
+        {!editing && <button className="ghost-btn weekly-test-btn" onClick={regenerateAiPlan}>{t.testRegenerateAi}</button>}
       </div>
       <ul className="list weekly-plan-list weekly-plan-luxe-list">
         {(plan.days || []).map((d, dayIdx) => (
