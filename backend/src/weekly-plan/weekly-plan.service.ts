@@ -134,7 +134,7 @@ export class WeeklyPlanService {
     return this.applyFoodTermGlossary(plan, 'en');
   }
 
-  async generatePlanForUser(userId: string, fillCurrentWeekOnly = false) {
+  async generatePlanForUser(userId: string, fillCurrentWeekOnly = false, forceRegenerate = false) {
     const userObjectId = new Types.ObjectId(userId);
     const user = await this.usersService.getById(userId).catch(() => null);
     if (!user) return null;
@@ -143,7 +143,7 @@ export class WeeklyPlanService {
     const lastWeek = this.getWeekStart(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
 
     const existing = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart });
-    if (existing && !fillCurrentWeekOnly) return existing;
+    if (existing && !fillCurrentWeekOnly && !forceRegenerate) return existing;
 
     const previousPlan = await this.weeklyPlanModel.findOne({ userId: userObjectId, weekStart: lastWeek }).lean();
     let generated = await this.generateWithAi({ user, weekStart, previousPlan });
