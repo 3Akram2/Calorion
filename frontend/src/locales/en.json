@@ -69,6 +69,7 @@
   "ramadanDescription": "Enable fasting-aware plan windows and prayer-time context.",
   "fajr": "Fajr",
   "maghrib": "Maghrib",
+  "ramadanDay": "Ramadan day",
   "enable": "Enable",
   "disable": "Disable",
   "fetchTodayTimings": "Fetch today timings",
