@@ -69,6 +69,7 @@
   "ramadanDescription": "تشغيل أسلوب صائم مع توقيتات الصلوات وتعديل توزيع الوجبات.",
   "fajr": "الفجر",
   "maghrib": "المغرب",
+  "ramadanDay": "يوم رمضان",
   "enable": "تشغيل",
   "disable": "إيقاف",
   "fetchTodayTimings": "جلب توقيتات اليوم",

@@ -29,6 +29,17 @@ function isRamadanNow() {
   }
 }
 
+function getRamadanDayNumber() {
+  try {
+    const month = Number(new Intl.DateTimeFormat('en-TN-u-ca-islamic', { month: 'numeric' }).format(new Date()))
+    if (month !== 9) return null
+    const day = Number(new Intl.DateTimeFormat('en-TN-u-ca-islamic', { day: 'numeric' }).format(new Date()))
+    return Number.isFinite(day) ? day : null
+  } catch {
+    return null
+  }
+}
+
 function AuthPage({ t, onAuthenticated }) {
   const [method, setMethod] = useState('phone')
   const [phone, setPhone] = useState('')
@@ -222,7 +233,7 @@ function DashboardPage({ t, profile, ramadanTimings, tips }) {
       </div>
 
       {profile?.ramadanMode && ramadanTimings && (
-        <p>{t.fajr}: <strong>{ramadanTimings.fajr}</strong> · {t.maghrib}: <strong>{ramadanTimings.maghrib}</strong></p>
+        <p>{t.ramadanDay}: <strong>{getRamadanDayNumber() || '-'}</strong> · {t.fajr}: <strong>{ramadanTimings.fajr}</strong> · {t.maghrib}: <strong>{ramadanTimings.maghrib}</strong></p>
       )}
 
       <h3 className="tips-title">{t.todayTips}</h3>
@@ -409,7 +420,7 @@ function ProfilePage({ t, profile, reloadProfile }) {
         </div>
       )}
 
-      {timings && <p>{t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}
+      {timings && <p>{t.ramadanDay}: <strong>{getRamadanDayNumber() || '-'}</strong> · {t.fajr}: <strong>{timings.fajr}</strong> · {t.maghrib}: <strong>{timings.maghrib}</strong></p>}
 
       {showPhotoMenu && (
         <div className="confirm-overlay" onClick={() => setShowPhotoMenu(false)}>
